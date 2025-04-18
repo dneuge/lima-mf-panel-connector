@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>de.energiequant.limamf</groupId>
+    <artifactId>panel-connector</artifactId>
+
+    <name>LiMa-MF Panel Connector</name>
+    <description>unofficial integration of MobiFlight-based flight simulation hardware panels on alternative platforms</description>
+    <version>0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <url>https://github.com/dneuge/lima-mf-panel-connector</url>
+
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <finalName>lima-mf</finalName>
+
+        <directory.generated.resources>src-gen/main/resources</directory.generated.resources>
+        <mainClass>de.energiequant.limamf.connector.Main</mainClass>
+
+        <!-- runtime dependencies -->
+        <slf4j.version>[1.7.36,1.7.99]</slf4j.version>
+        <log4j.version>2.24.1</log4j.version>
+        <xpudp.version>0.1.0-SNAPSHOT</xpudp.version>
+        <mfcompat.version>0.1-SNAPSHOT</mfcompat.version>
+
+        <!-- test dependencies -->
+        <junit.version>5.9.3</junit.version>
+        <assertj.version>3.24.2</assertj.version>
+        <hamcrest.version>2.2</hamcrest.version>
+        <mockito.version>5.3.1</mockito.version>
+
+        <!-- build dependencies -->
+        <maven.compiler.version>3.11.0</maven.compiler.version>
+        <maven.shade.version>3.2.4</maven.shade.version>
+        <maven.attribution.version>0.9.8</maven.attribution.version>
+        <maven.buildHelper.version>3.2.0</maven.buildHelper.version>
+        <maven.jar.version>3.2.0</maven.jar.version>
+        <maven.surefire.version>3.0.0-M5</maven.surefire.version>
+        <autoService.version>1.1.1</autoService.version>
+    </properties>
+
+    <scm>
+        <connection>scm:git:git://github.com/dneuge/lima-mf-panel-connector.git</connection>
+        <developerConnection>scm:git:ssh://github.com:dneuge/lima-mf-panel-connector.git</developerConnection>
+        <url>https://github.com/dneuge/lima-mf-panel-connector</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Daniel Neugebauer</name>
+            <email>dneuge@energiequant.de</email>
+            <url>http://www.energiequant.de/</url>
+        </developer>
+    </developers>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- runtime dependencies -->
+        <dependency>
+            <groupId>de.energiequant.limamf</groupId>
+            <artifactId>mf-compat</artifactId>
+            <version>${mfcompat.version}</version>
+        </dependency>
+
+        <!--
+        <dependency>
+            <groupId>de.painer</groupId>
+            <artifactId>xplane</artifactId>
+            <version>${xpudp.version}</version>
+        </dependency>
+        -->
+
+        <dependency>
+            <!-- TODO: switch back to upstream when changes are merged -->
+            <groupId>de.energiequant</groupId>
+            <artifactId>github-spainer-xplane-fork</artifactId>
+            <version>${xpudp.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrest.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- build dependencies -->
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service-annotations</artifactId>
+            <version>${autoService.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${finalName}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.version}</version>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.jinnovations</groupId>
+                <artifactId>attribution-maven-plugin</artifactId>
+                <version>${maven.attribution.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate-attribution-file</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputFile>
+                        ${project.basedir}/${directory.generated.resources}/de/energiequant/limamf/connector/attribution/attribution.xml
+                    </outputFile>
+                    <forceRegeneration>true</forceRegeneration>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>${maven.buildHelper.version}</version>
+                <executions>
+                    <execution>
+                        <id>add-resource</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>add-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${directory.generated.resources}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.auto.service</groupId>
+                            <artifactId>auto-service</artifactId>
+                            <version>${autoService.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.version}</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Built-By></Built-By>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.shade.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${mainClass}</mainClass>
+                                </transformer>
+                            </transformers>
+
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+
+                                        <!-- License information for dependencies is provided at runtime
+                                            for this application. Original files from repackaged JARs collide and cannot
+                                            be related to the correct projects. Furthermore not every JAR includes license
+                                            information in this way so the information is incomplete, hidden and useless.
+                                            Remove those files. -->
+                                        <exclude>META-INF/NOTICE*</exclude>
+                                        <exclude>META-INF/DEPENDENCIES*</exclude>
+                                        <exclude>META-INF/LICENSE*</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

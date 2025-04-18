@@ -1,0 +1,222 @@
+package de.energiequant.limamf.connector;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import de.energiequant.limamf.compat.config.connector.ConnectorConfiguration;
+import de.energiequant.limamf.connector.panels.DCPCCPPanel;
+import de.energiequant.limamf.connector.panels.Panel;
+import de.energiequant.limamf.connector.panels.PanelEventListener;
+import de.energiequant.limamf.connector.simulator.SimulatorClient;
+import de.energiequant.limamf.connector.simulator.SimulatorEventListener;
+
+public class Main {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+
+    private static final Pattern WANTED_TTY_NAME_PATTERN = Pattern.compile("^tty(S|ACM).*");
+
+    private final Set<String> enabledSerialIds = new HashSet<>();
+    private final ConnectorConfiguration connectorConfiguration;
+
+    private final List<Panel> activePanels = new ArrayList<>();
+
+    private final SimulatorClient simulatorClient;
+
+    private final SimulatorEventProxy simulatorEventProxy;
+    private final PanelEventProxy panelEventProxy;
+
+    private abstract static class EventProxy<T> {
+        private final Collection<T> targets = new ArrayList<>();
+
+        protected Collection<T> copyTargets() {
+            Collection<T> out;
+            synchronized (targets) {
+                out = new ArrayList<>(targets);
+            }
+            return out;
+        }
+
+        public void attachListener(T listener) {
+            synchronized (targets) {
+                if (!targets.contains(listener)) {
+                    targets.add(listener);
+                }
+            }
+        }
+
+        public void detachListener(T listener) {
+            synchronized (targets) {
+                targets.remove(listener);
+            }
+        }
+    }
+
+    private static class SimulatorEventProxy extends EventProxy<SimulatorEventListener> implements SimulatorEventListener {
+        @Override
+        public void onSimStatusChanged(SimulatorStatus status, String msg) {
+            for (SimulatorEventListener listener : copyTargets()) {
+                try {
+                    listener.onSimStatusChanged(status, msg);
+                } catch (Exception ex) {
+                    LOGGER.warn("onSimStatusChanged: failed to notify listener {}", listener, ex);
+                }
+            }
+        }
+
+        @Override
+        public void onSimPanelBrightnessChanged(double fraction) {
+            for (SimulatorEventListener listener : copyTargets()) {
+                try {
+                    listener.onSimPanelBrightnessChanged(fraction);
+                } catch (Exception ex) {
+                    LOGGER.warn("onSimPanelBrightnessChanged: failed to notify listener {}", listener, ex);
+                }
+            }
+        }
+    }
+
+    private static class PanelEventProxy extends EventProxy<PanelEventListener> implements PanelEventListener {
+        @Override
+        public void onPanelEvent(DCPCCPPanel.Event event) {
+            for (PanelEventListener listener : copyTargets()) {
+                try {
+                    listener.onPanelEvent(event);
+                } catch (Exception ex) {
+                    LOGGER.warn("onPanelEvent: failed to notify listener {}", listener, ex);
+                }
+            }
+        }
+    }
+
+    private Main(String configPath, String serialId) {
+        // TODO: relocate to configuration file + GUI
+        enabledSerialIds.add(serialId);
+        File connectorConfigFile = new File(configPath);
+
+        simulatorEventProxy = new SimulatorEventProxy();
+        panelEventProxy = new PanelEventProxy();
+
+        Map<String, SimulatorClient.Factory> simulatorClients = findSimulatorClients();
+
+        // TODO: read wanted client from config instead of requiring exactly one to be present (+ select on GUI)
+        if (simulatorClients.size() != 1) {
+            LOGGER.error("Exactly one simulator client must be present on class path, found: {}", simulatorClients);
+            System.exit(1);
+        }
+        SimulatorClient.Factory simulatorClientFactory = simulatorClients.entrySet().iterator().next().getValue();
+
+        // TODO: provide actual configuration from sub-properties
+        Properties simulatorClientProperties = new Properties();
+
+        LOGGER.info("Using simulator client: {} [{}]", simulatorClientFactory.getClientName(), simulatorClientFactory.getClientId());
+        simulatorClient = simulatorClientFactory.createClient(simulatorClientProperties, simulatorEventProxy).orElse(null);
+        if (simulatorClient == null) {
+            LOGGER.error("Failed to create simulator client: {} [{}]", simulatorClientFactory.getClientName(), simulatorClientFactory.getClientId());
+            System.exit(1);
+        }
+        panelEventProxy.attachListener(simulatorClient.getPanelEventListener());
+
+        connectorConfiguration = ConnectorConfiguration.fromXML(connectorConfigFile);
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                // TODO: AFAIR logger may have been terminated at this point except it isn't (maybe due to threading?)
+
+                if (simulatorClient != null) {
+                    try {
+                        LOGGER.info("disposing simulator client");
+                        panelEventProxy.detachListener(simulatorClient.getPanelEventListener());
+                        simulatorClient.disposeSimulatorClient();
+                    } catch (Exception ex) {
+                        LOGGER.warn("failed to dispose simulator client", ex);
+                    }
+                }
+
+                for (Panel panel : activePanels) {
+                    try {
+                        LOGGER.info("disconnecting from panel {}", panel);
+                        panel.getSimulatorEventListener().ifPresent(simulatorEventProxy::detachListener);
+                        panel.disconnect();
+                    } catch (Exception ex) {
+                        LOGGER.warn("failed to disconnect panel {}", panel);
+                    }
+                }
+            }
+        });
+    }
+
+    private void connect() {
+        LOGGER.info("Searching USB devices...");
+        Collection<USBDevice> usbDevices = new DeviceDiscovery().findSupportedDevices(x -> WANTED_TTY_NAME_PATTERN.matcher(x).matches());
+        if (usbDevices.isEmpty()) {
+            LOGGER.error("no supported USB devices found");
+            return;
+        }
+
+        LOGGER.debug("Found USB devices: {}", usbDevices);
+
+        try {
+            for (USBDevice usbDevice : usbDevices) {
+                String serialId = usbDevice.getSerialId().orElse(null);
+                if (serialId == null) {
+                    LOGGER.warn("Ignoring USB device without serial: {}", usbDevice);
+                    continue;
+                }
+
+                if (!enabledSerialIds.contains(serialId)) {
+                    LOGGER.warn("USB device is not enabled, ignoring: {}", usbDevice);
+                    continue;
+                }
+
+                DCPCCPPanel panel = DCPCCPPanel.tryConnect(panelEventProxy, usbDevice, connectorConfiguration).orElse(null);
+                if (panel != null) {
+                    activePanels.add(panel);
+                    panel.getSimulatorEventListener().ifPresent(simulatorEventProxy::attachListener);
+                }
+            }
+        } catch (InterruptedException ex) {
+            LOGGER.error("interrupted, exiting", ex);
+            System.exit(1);
+        }
+
+        // TODO: monitor for panels to get connected later
+        if (activePanels.isEmpty()) {
+            LOGGER.error("no panels found, exiting");
+            System.exit(1);
+        }
+    }
+
+    private static Map<String, SimulatorClient.Factory> findSimulatorClients() {
+        Map<String, SimulatorClient.Factory> out = new HashMap<>();
+
+        for (SimulatorClient.Factory factory : ServiceLoader.load(SimulatorClient.Factory.class)) {
+            String id = factory.getClientId();
+            SimulatorClient.Factory previous = out.put(id, factory);
+            if (previous != null) {
+                LOGGER.warn("Multiple simulator client implementations found identifying as {}: {}, {}", id, previous.getClass().getCanonicalName(), factory.getClass().getCanonicalName());
+            }
+        }
+
+        return out;
+    }
+
+    public static void main(String[] args) {
+        String configPath = args[0];
+        String serialId = args[1];
+
+        new Main(configPath, serialId).connect();
+    }
+}

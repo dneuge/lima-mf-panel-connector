@@ -1,0 +1,9 @@
+.idea
+
+src-gen
+target
+dependency-reduced-pom.xml
+
+ManualTest*
+*.nocommit
+*.nocommit.*
