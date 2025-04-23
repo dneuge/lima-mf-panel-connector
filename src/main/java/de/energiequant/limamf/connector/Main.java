@@ -91,9 +91,7 @@ public class Main {
 
         @Override
         public List<String> getExtraInfo() {
-            return Collections.singletonList(
-                "not affiliated with MobiFlight"
-            );
+            return Collections.emptyList();
         }
 
         @Override
