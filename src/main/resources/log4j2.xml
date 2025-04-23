@@ -4,19 +4,18 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{ISO8601} - %-5p - %36.36c{1} - %m%n"/>
         </Console>
-        <!-- 
         <Buffer name="Buffer">
             <PatternLayout pattern="[%d{HH:mm:ss}] %m"/>
         </Buffer>
-         -->
     </Appenders>
     <Loggers>
         <Logger name="de.energiequant.limamf" level="debug" additivity="false">
             <AppenderRef ref="Console"/>
+            <AppenderRef ref="Buffer"/>
         </Logger>
         <Root level="info">
             <AppenderRef ref="Console"/>
-            <!-- <AppenderRef ref="Buffer"/>-->
+            <AppenderRef ref="Buffer"/>
         </Root>
     </Loggers>
 </Configuration>

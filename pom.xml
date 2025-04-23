@@ -51,6 +51,7 @@
         <maven.jar.version>3.2.0</maven.jar.version>
         <maven.surefire.version>3.0.0-M5</maven.surefire.version>
         <autoService.version>1.1.1</autoService.version>
+        <log4jCachefileTransformer.version>2.14.0</log4jCachefileTransformer.version>
     </properties>
 
     <scm>
@@ -171,6 +172,7 @@
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service-annotations</artifactId>
             <version>${autoService.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -197,7 +199,7 @@
                 </executions>
                 <configuration>
                     <outputFile>
-                        ${project.basedir}/${directory.generated.resources}/de/energiequant/limamf/connector/attribution/attribution.xml
+                        ${project.basedir}/${directory.generated.resources}/de/energiequant/limamf/connector/attribution.xml
                     </outputFile>
                     <forceRegeneration>true</forceRegeneration>
                 </configuration>
@@ -263,6 +265,8 @@
                         </goals>
                         <configuration>
                             <transformers>
+                                <transformer implementation="com.github.edwgiz.maven_shade_plugin.log4j2_cache_transformer.PluginsCacheFileTransformer">
+                                </transformer>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>${mainClass}</mainClass>
@@ -289,6 +293,13 @@
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.edwgiz</groupId>
+                        <artifactId>maven-shade-plugin.log4j2-cachefile-transformer</artifactId>
+                        <version>${log4jCachefileTransformer.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
