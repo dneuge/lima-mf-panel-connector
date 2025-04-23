@@ -31,6 +31,7 @@
         <mainClass>de.energiequant.limamf.connector.Main</mainClass>
 
         <!-- runtime dependencies -->
+        <appUtilsMisc.version>0.1-SNAPSHOT</appUtilsMisc.version>
         <slf4j.version>[1.7.36,1.7.99]</slf4j.version>
         <log4j.version>2.24.1</log4j.version>
         <xpudp.version>0.1.0-SNAPSHOT</xpudp.version>
@@ -84,6 +85,12 @@
             <groupId>de.energiequant.limamf</groupId>
             <artifactId>mf-compat</artifactId>
             <version>${mfcompat.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.energiequant.common</groupId>
+            <artifactId>app-utils-misc</artifactId>
+            <version>${appUtilsMisc.version}</version>
         </dependency>
 
         <!--

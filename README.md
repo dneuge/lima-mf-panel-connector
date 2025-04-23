@@ -39,6 +39,7 @@ Several OpenJDK™-based Java distributions exist. If in doubt, our recommendati
 
 When developing/building this application, the following Maven artifacts need to be built separately:
 
+* https://github.com/dneuge/app-utils-misc-java
 * https://github.com/dneuge/lima-mf-compat
 * https://github.com/dneuge/xplane-java-udp (forked from https://github.com/spainer/xplane-java/)
 
