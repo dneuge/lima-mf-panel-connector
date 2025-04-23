@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<copyrightNotices>
+    <notice groupId="com.google.auto.service" artifactId="auto-service-annotations" version="1.1.1">
+        <!-- this is compile-time dependency but attribution.xml does not indicate the scope - exclude? -->
+        Copyright 2013 Google LLC
+    </notice>
+    <notice groupId="commons-codec" artifactId="commons-codec" version="1.18.0">
+        Apache Commons Codec
+        Copyright 2002-2025 The Apache Software Foundation
+
+        This product includes software developed at
+        The Apache Software Foundation (https://www.apache.org/).
+    </notice>
+    <notice groupId="de.energiequant.common" artifactId="app-utils-misc" version="0.1-SNAPSHOT">
+        Copyright (c) 2021-2025 Daniel Neugebauer
+    </notice>
+    <notice groupId="de.energiequant.limamf" artifactId="mf-compat" version="0.1-SNAPSHOT">
+        Copyright (c) 2025 Daniel Neugebauer
+    </notice>
+    <notice groupId="de.energiequant" artifactId="github-spainer-xplane-fork" version="0.1.0-SNAPSHOT">
+        Copyright (c) 2021 Sven Painer
+    </notice>
+    <notice groupId="org.apache.commons" artifactId="commons-lang3" version="3.17.0">
+        Apache Commons Lang
+        Copyright 2001-2024 The Apache Software Foundation
+
+        This product includes software developed at
+        The Apache Software Foundation (https://www.apache.org/).
+    </notice>
+    <notice groupId="org.apache.logging.log4j" artifactId="log4j-api" version="2.24.1">
+        Apache Log4j API
+        Copyright 1999-2024 The Apache Software Foundation
+
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
+    </notice>
+    <notice groupId="org.apache.logging.log4j" artifactId="log4j-core" version="2.24.1">
+        Apache Log4j Core
+        Copyright 1999-2012 Apache Software Foundation
+
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
+
+        ResolverUtil.java
+        Copyright 2005-2006 Tim Fennell
+    </notice>
+    <notice groupId="org.apache.logging.log4j" artifactId="log4j-slf4j-impl" version="2.24.1">
+        SLF4J 1 Binding for Log4j API
+        Copyright 1999-2024 The Apache Software Foundation
+
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
+    </notice>
+    <notice groupId="org.slf4j" artifactId="slf4j-api" version="1.7.36">
+        <!-- grabbed from MIT license file (note there are two, on root folder and in slf4j-api -->
+        Copyright (c) 2004-2022 QOS.ch Sarl (Switzerland)
+        All rights reserved.
+    </notice>
+</copyrightNotices>
