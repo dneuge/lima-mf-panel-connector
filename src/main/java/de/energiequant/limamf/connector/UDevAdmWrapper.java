@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -76,8 +75,8 @@ public class UDevAdmWrapper {
         if (!canonicalPath.startsWith(SYS_PATH)) {
             throw new IllegalArgumentException("given node does not yield a canonical path starting with " + SYS_PATH + ":" + sysNode);
         }
- 
-        List<String> lines = udevadm.run("info", "-p", canonicalPath.substring(SYS_PATH.length()));
-        return DeviceInformation.fromInfoOutput(lines);
+
+        ExternalCommand.Result res = udevadm.run("info", "-p", canonicalPath.substring(SYS_PATH.length()));
+        return DeviceInformation.fromInfoOutput(res.getStandardOutputLines());
     }
 }

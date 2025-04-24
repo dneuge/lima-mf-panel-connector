@@ -1,9 +1,12 @@
 package de.energiequant.limamf.connector.utils;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,15 +25,35 @@ public class ExternalCommand {
 
     private final File executable;
 
+    public static class Result {
+        private final byte[] stdout;
+
+        private Result(byte[] stdout) {
+            this.stdout = stdout;
+        }
+
+        public String getStandardOutputText() {
+            return new String(stdout);
+        }
+
+        public List<String> getStandardOutputLines() {
+            return Arrays.asList(getStandardOutputText().split("\\R"));
+        }
+
+        public Reader getStandardOutputReader() {
+            return new InputStreamReader(new ByteArrayInputStream(stdout));
+        }
+    }
+
     public ExternalCommand(File executable) {
         this.executable = executable;
     }
 
-    public List<String> run(String... parameters) {
+    public Result run(String... parameters) {
         return run(Arrays.asList(parameters));
     }
 
-    public List<String> run(Collection<String> parameters) {
+    public Result run(Collection<String> parameters) {
         List<String> command = new ArrayList<>();
         command.add(executable.getAbsolutePath());
         command.addAll(parameters);
@@ -44,15 +67,21 @@ public class ExternalCommand {
             throw new IllegalArgumentException("Failed to spawn command: " + String.join(" ", command), ex);
         }
 
-        List<String> lines = new ArrayList<>();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        byte[] buffer = new byte[4096];
         try (
-            InputStreamReader isr = new InputStreamReader(process.getInputStream());
-            BufferedReader br = new BufferedReader(isr);
+            InputStream is = process.getInputStream();
         ) {
-            String line = br.readLine();
-            while (line != null) {
-                lines.add(line);
-                line = br.readLine();
+            while (true) {
+                int read = is.read(buffer);
+                if (read > 0) {
+                    baos.write(buffer, 0, read);
+                } else if (read == -1) {
+                    break;
+                } else {
+                    throw new IllegalArgumentException("Got invalid result while reading: " + read);
+                }
             }
         } catch (IOException ex) {
             throw new IllegalArgumentException("Failed to read output: " + String.join(" ", command), ex);
@@ -68,7 +97,7 @@ public class ExternalCommand {
             throw new RuntimeException("interrupted during command termination", ex);
         }
 
-        return lines;
+        return new Result(baos.toByteArray());
     }
 
     public static Optional<ExternalCommand> locateFromPaths(String commandName) {
