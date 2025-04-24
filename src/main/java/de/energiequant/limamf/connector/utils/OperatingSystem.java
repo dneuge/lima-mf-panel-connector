@@ -60,14 +60,12 @@ public class OperatingSystem {
     }
 
     public static void disableSerialEcho(File deviceNode) {
-        requireLinux();
-
         File stty = locateFromPaths("stty", x -> x.canExecute()).orElseThrow(() -> new MissingTool("stty could not be found"));
 
         int exitCode;
         try {
             exitCode = Runtime.getRuntime()
-                              .exec(new String[]{stty.getAbsolutePath(), "-F", deviceNode.getAbsolutePath(), "-echo"})
+                              .exec(new String[]{stty.getAbsolutePath(), isMacOS() ? "-f" : "-F", deviceNode.getAbsolutePath(), "-echo"})
                               .waitFor();
         } catch (InterruptedException | IOException ex) {
             throw new CommandFailed("failed to disable echo on " + deviceNode, ex);
