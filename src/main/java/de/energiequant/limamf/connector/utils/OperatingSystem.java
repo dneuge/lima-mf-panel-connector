@@ -18,10 +18,25 @@ public class OperatingSystem {
         // utility class; hide constructor
     }
 
-    public static void requireLinux() {
+    public static boolean isLinux() {
         String os = System.getProperty("os.name");
-        if (!os.toLowerCase().contains("linux")) {
-            throw new UnsupportedOperatingSystem("Linux is required; found: \"" + os + "\"");
+        return os.toLowerCase().contains("linux");
+    }
+
+    public static void requireLinux() {
+        if (!isLinux()) {
+            throw new UnsupportedOperatingSystem("Linux is required; found: \"" + System.getProperty("os.name") + "\"");
+        }
+    }
+
+    public static boolean isMacOS() {
+        String os = System.getProperty("os.name");
+        return os.toLowerCase().contains("mac os");
+    }
+
+    public static void requireMacOS() {
+        if (!isMacOS()) {
+            throw new UnsupportedOperatingSystem("macOS is required; found: \"" + System.getProperty("os.name") + "\"");
         }
     }
 
