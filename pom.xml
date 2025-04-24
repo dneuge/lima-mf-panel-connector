@@ -36,6 +36,7 @@
         <log4j.version>2.24.1</log4j.version>
         <xpudp.version>0.1.0-SNAPSHOT</xpudp.version>
         <mfcompat.version>0.1-SNAPSHOT</mfcompat.version>
+        <commons.configuration.version>2.11.0</commons.configuration.version>
 
         <!-- test dependencies -->
         <junit.version>5.9.3</junit.version>
@@ -131,6 +132,12 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>${commons.configuration.version}</version>
         </dependency>
 
         <!-- test dependencies -->

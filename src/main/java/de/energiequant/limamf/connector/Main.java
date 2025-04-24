@@ -33,6 +33,7 @@ import de.energiequant.limamf.connector.panels.Panel;
 import de.energiequant.limamf.connector.panels.PanelEventListener;
 import de.energiequant.limamf.connector.simulator.SimulatorClient;
 import de.energiequant.limamf.connector.simulator.SimulatorEventListener;
+import de.energiequant.limamf.connector.utils.OperatingSystem;
 
 public class Main {
     // FIXME: only run while disclaimer is accepted
@@ -44,7 +45,7 @@ public class Main {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    private static final Pattern WANTED_TTY_NAME_PATTERN = Pattern.compile("^tty(S|ACM).*");
+    private static final Pattern WANTED_TTY_NAME_PATTERN = OperatingSystem.isMacOS() ? Pattern.compile("^(cu|tty)\\.usb(modem|serial).*") : Pattern.compile("^tty(S|ACM).*");
 
     private final Set<String> enabledSerialIds = new HashSet<>();
     private final ConnectorConfiguration connectorConfiguration;

@@ -86,8 +86,8 @@ public class OperatingSystem {
         }
     }
 
-    private static class UnsupportedOperatingSystem extends RuntimeException {
-        UnsupportedOperatingSystem(String msg) {
+    public static class UnsupportedOperatingSystem extends RuntimeException {
+        public UnsupportedOperatingSystem(String msg) {
             super(msg);
         }
     }
