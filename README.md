@@ -8,7 +8,7 @@ official MobiFlight Connector is not available.
 Users capable of running MobiFlight should follow official installation instructions instead of using this unofficial
 application.
 
-Only Linux is supported by this application at the moment, support for Mac® computers will be added shortly.
+Only Linux and Mac® computers are supported by this application.
 
 As MobiFlight is natively available on Windows, there are currently no plans to add Windows support.
 
