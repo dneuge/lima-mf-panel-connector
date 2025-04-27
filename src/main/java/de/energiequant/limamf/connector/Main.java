@@ -26,7 +26,9 @@ import de.energiequant.apputils.misc.attribution.CopyrightNoticeProvider;
 import de.energiequant.apputils.misc.attribution.CopyrightNotices;
 import de.energiequant.apputils.misc.attribution.License;
 import de.energiequant.apputils.misc.attribution.Project;
+import de.energiequant.limamf.compat.config.connector.ConfigNode;
 import de.energiequant.limamf.compat.config.connector.ConnectorConfiguration;
+import de.energiequant.limamf.compat.config.connector.ModuleBindable;
 import de.energiequant.limamf.connector.gui.MainWindow;
 import de.energiequant.limamf.connector.panels.DCPCCPPanel;
 import de.energiequant.limamf.connector.panels.Panel;
@@ -206,6 +208,11 @@ public class Main {
         panelEventProxy.attachListener(simulatorClient.getPanelEventListener());
 
         connectorConfiguration = ConnectorConfiguration.fromXML(connectorConfigFile);
+        Set<String> serials = getSerials(connectorConfiguration);
+        LOGGER.debug("Serials in connector configuration: {}", serials);
+        if (serials.size() != 1) {
+            throw new IllegalArgumentException("Unsupported number of serials in config file; found " + serials.size() + ", expected exactly 1");
+        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::terminate));
     }
@@ -294,6 +301,25 @@ public class Main {
                 panel.disconnect();
             } catch (Exception ex) {
                 LOGGER.warn("failed to disconnect panel {}", panel);
+            }
+        }
+    }
+
+    private Set<String> getSerials(ConnectorConfiguration config) {
+        Set<String> out = new HashSet<>();
+        collectSerials(out, config.getItems());
+        return out;
+    }
+
+    private void collectSerials(Collection<String> collector, Collection<?> objects) {
+        for (Object obj : objects) {
+            if (obj instanceof ModuleBindable) {
+                ((ModuleBindable) obj).getSerial()
+                                      .ifPresent(collector::add);
+            }
+
+            if (obj instanceof ConfigNode) {
+                collectSerials(collector, ((ConfigNode) obj).getChildren());
             }
         }
     }
