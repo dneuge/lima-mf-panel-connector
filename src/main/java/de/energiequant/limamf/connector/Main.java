@@ -219,7 +219,8 @@ public class Main {
 
     private void connect() {
         LOGGER.info("Searching USB devices...");
-        Collection<USBDevice> usbDevices = new DeviceDiscovery().findSupportedDevices(x -> WANTED_TTY_NAME_PATTERN.matcher(x).matches());
+        Collection<USBDevice> usbDevices = DeviceDiscovery.getInstance()
+                                                          .findSupportedDevices(x -> WANTED_TTY_NAME_PATTERN.matcher(x).matches());
         if (usbDevices.isEmpty()) {
             LOGGER.error("no supported USB devices found");
             return;
