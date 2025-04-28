@@ -561,7 +561,7 @@ public class DCPCCPPanel implements Panel {
     }
 
     private void indexConfigItem(ConfigItem output, String interfaceSerialId, OutputDisplay display) {
-        if (!interfaceSerialId.equals(display.getSerial())) {
+        if (!interfaceSerialId.equals(display.getSerial().orElseThrow(() -> new IllegalArgumentException("display without serial")))) {
             return;
         }
 
@@ -661,7 +661,7 @@ public class DCPCCPPanel implements Panel {
     }
 
     private void indexConfigItem(ConfigItem input, String interfaceSerialId, InputMultiplexerSettings settings) {
-        if (!interfaceSerialId.equals(settings.getSerial())) {
+        if (!interfaceSerialId.equals(settings.getSerial().orElseThrow(() -> new IllegalArgumentException("input multiplexer without serial")))) {
             return;
         }
 
@@ -678,7 +678,7 @@ public class DCPCCPPanel implements Panel {
     }
 
     private void indexConfigItem(ConfigItem input, String interfaceSerialId, EncoderSettings settings) {
-        if (!interfaceSerialId.equals(settings.getSerial())) {
+        if (!interfaceSerialId.equals(settings.getSerial().orElseThrow(() -> new IllegalArgumentException("encoder without serial")))) {
             return;
         }
 
