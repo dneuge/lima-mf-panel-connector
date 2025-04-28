@@ -179,10 +179,24 @@ public class Main {
         }
     }
 
-    private Main(String configPath, String serialId) {
-        // TODO: relocate to configuration file + GUI
-        enabledSerialIds.add(serialId);
-        File connectorConfigFile = new File(configPath);
+    private Main(Configuration config) {
+        // TODO: relocate to GUI, accept none-existing config
+
+        enabledSerialIds.addAll(config.getUSBInterfaceSerials());
+        if (enabledSerialIds.isEmpty()) {
+            throw new IllegalArgumentException("at least one serial ID is required");
+        }
+
+        Collection<Configuration.Module> moduleConfigs = config.getModules();
+        if (moduleConfigs.size() != 1) {
+            throw new IllegalArgumentException("exactly one module config is required, got " + moduleConfigs.size());
+        }
+
+        Configuration.Module moduleConfig = moduleConfigs.iterator().next();
+
+        // TODO: restrict to configured type, name and device serial
+
+        File connectorConfigFile = new File(moduleConfig.getConnectorConfig());
 
         simulatorEventProxy = new SimulatorEventProxy();
         panelEventProxy = new PanelEventProxy();
@@ -211,6 +225,7 @@ public class Main {
         Set<String> serials = getSerials(connectorConfiguration);
         LOGGER.debug("Serials in connector configuration: {}", serials);
         if (serials.size() != 1) {
+            // TODO: map config serial to device serial; auto-select if unambiguous
             throw new IllegalArgumentException("Unsupported number of serials in config file; found " + serials.size() + ", expected exactly 1");
         }
 
@@ -274,10 +289,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        String configPath = args[0];
-        String serialId = args[1];
-
-        Main main = new Main(configPath, serialId);
+        Configuration config = Configuration.loadProperties(new File(args[0]));
+        Main main = new Main(config);
         new MainWindow(main, main::terminate);
         main.connect();
     }
