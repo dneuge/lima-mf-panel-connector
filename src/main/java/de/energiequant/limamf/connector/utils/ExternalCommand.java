@@ -1,5 +1,6 @@
 package de.energiequant.limamf.connector.utils;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -14,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,6 +100,53 @@ public class ExternalCommand {
         }
 
         return new Result(baos.toByteArray());
+    }
+
+    public Process monitorLines(Collection<String> parameters, Consumer<String> callback) {
+        List<String> command = new ArrayList<>();
+        command.add(executable.getAbsolutePath());
+        command.addAll(parameters);
+
+        LOGGER.debug("Monitoring command: {}", command);
+
+        Process process;
+        try {
+            process = new ProcessBuilder(command).start();
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Failed to spawn command: " + String.join(" ", command), ex);
+        }
+
+        new Thread(
+            () -> {
+                Throwable innerException = null;
+                try (
+                    InputStream is = process.getInputStream();
+                    InputStreamReader isr = new InputStreamReader(is);
+                    BufferedReader br = new BufferedReader(isr);
+                ) {
+                    String line = br.readLine();
+                    while (line != null) {
+                        try {
+                            callback.accept(line);
+                        } catch (Exception ex) {
+                            LOGGER.warn("monitor callback failed for {}", command, ex);
+                            innerException = ex;
+                            break;
+                        }
+                        line = br.readLine();
+                    }
+                } catch (IOException ex) {
+                    throw new IllegalArgumentException("Failed to read output: " + String.join(" ", command), ex);
+                }
+
+                if (innerException != null) {
+                    process.destroyForcibly();
+                }
+            },
+            "ExternalCommand " + String.join(" ", command)
+        ).start();
+
+        return process;
     }
 
     public static Optional<ExternalCommand> locateFromPaths(String commandName) {
