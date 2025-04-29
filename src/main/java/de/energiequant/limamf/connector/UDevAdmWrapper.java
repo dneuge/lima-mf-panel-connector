@@ -57,6 +57,28 @@ public class UDevAdmWrapper {
 
             return new DeviceInformation(kernelDeviceNodeName, properties);
         }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("DeviceInformation(");
+
+            sb.append(kernelDeviceNodeName);
+
+            properties.entrySet()
+                      .stream()
+                      .sorted(Map.Entry.comparingByKey())
+                      .forEach(entry -> {
+                          sb.append(", ");
+                          sb.append(entry.getKey());
+                          sb.append("=\"");
+                          sb.append(entry.getValue());
+                          sb.append("\"");
+                      });
+
+            sb.append(")");
+
+            return sb.toString();
+        }
     }
 
     public UDevAdmWrapper() {
