@@ -1,6 +1,7 @@
 package de.energiequant.limamf.connector;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.Optional;
 
 public class USBDevice {
@@ -132,5 +133,25 @@ public class USBDevice {
         sb.append(")");
 
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof USBDevice)) {
+            return false;
+        }
+
+        USBDevice other = (USBDevice) obj;
+
+        return this.vendorId == other.vendorId
+            && this.productId == other.productId
+            && Objects.equals(this.deviceNode, other.deviceNode)
+            && Objects.equals(this.serialId, other.serialId)
+            && Objects.equals(this.name, other.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(vendorId, productId, serialId, deviceNode, name);
     }
 }
