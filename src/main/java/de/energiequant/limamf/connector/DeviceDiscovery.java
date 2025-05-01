@@ -42,7 +42,7 @@ public abstract class DeviceDiscovery {
         }
     }
 
-    private boolean isSupportedUsbProduct(USBDevice device) {
+    public boolean isSupportedUSBProduct(USBDevice device) {
         int vendorId = device.getVendorId().orElse(-1);
         if (vendorId < 0) {
             return false;
@@ -67,7 +67,7 @@ public abstract class DeviceDiscovery {
 
     public Collection<USBDevice> findSupportedDevices(Predicate<String> ttyNameFilter) {
         return findUSBSerialDevices(ttyNameFilter).stream()
-                                                  .filter(this::isSupportedUsbProduct)
+                                                  .filter(this::isSupportedUSBProduct)
                                                   .collect(Collectors.toList());
     }
 
