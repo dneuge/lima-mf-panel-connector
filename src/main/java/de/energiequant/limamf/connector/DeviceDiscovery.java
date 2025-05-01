@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,16 +58,6 @@ public abstract class DeviceDiscovery {
         }
 
         return supportedProductIds.contains(productId);
-    }
-
-    public Collection<USBDevice> findSupportedDevices() {
-        return findSupportedDevices(ACCEPT_ALL);
-    }
-
-    public Collection<USBDevice> findSupportedDevices(Predicate<String> ttyNameFilter) {
-        return findUSBSerialDevices(ttyNameFilter).stream()
-                                                  .filter(this::isSupportedUSBProduct)
-                                                  .collect(Collectors.toList());
     }
 
     public Collection<USBDevice> findUSBSerialDevices() {

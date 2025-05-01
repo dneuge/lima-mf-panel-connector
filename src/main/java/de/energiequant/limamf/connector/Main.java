@@ -14,6 +14,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -234,8 +235,10 @@ public class Main {
 
     private void connect() {
         LOGGER.info("Searching USB devices...");
-        Collection<USBDevice> usbDevices = DeviceDiscovery.getInstance()
-                                                          .findSupportedDevices(x -> WANTED_TTY_NAME_PATTERN.matcher(x).matches());
+        DeviceDiscovery deviceDiscovery = DeviceDiscovery.getInstance();
+        Collection<USBDevice> usbDevices = deviceDiscovery.findUSBSerialDevices(x -> WANTED_TTY_NAME_PATTERN.matcher(x).matches()).stream()
+                                                          .filter(deviceDiscovery::isSupportedUSBProduct)
+                                                          .collect(Collectors.toList());
         if (usbDevices.isEmpty()) {
             LOGGER.error("no supported USB devices found");
             return;
