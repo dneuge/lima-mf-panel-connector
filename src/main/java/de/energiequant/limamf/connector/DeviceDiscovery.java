@@ -66,6 +66,12 @@ public abstract class DeviceDiscovery {
 
     public abstract Collection<USBDevice> findUSBSerialDevices(Predicate<String> ttyNameFilter);
 
+    public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices() {
+        return monitorUSBSerialDevices(ACCEPT_ALL);
+    }
+
+    public abstract AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices(Predicate<String> ttyNameFilter);
+
     public static DeviceDiscovery getInstance() {
         return INSTANCE;
     }

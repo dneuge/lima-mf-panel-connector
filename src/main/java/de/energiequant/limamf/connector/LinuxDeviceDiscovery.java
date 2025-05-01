@@ -4,7 +4,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -36,38 +39,102 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
                 continue;
             }
 
-            UDevAdmWrapper.DeviceInformation udevInfo = udevadm.info(sysClassTtyNode);
-            if (!udevInfo.getKernelDeviceNodeName().isPresent()) {
-                LOGGER.debug("Skipping USB serial device with unreported kernel device node name: {}", sysClassTtyNode);
-                continue;
-            }
-
-            Map<String, String> properties = udevInfo.getProperties();
-            String devicePath = properties.get("DEVNAME");
-            if (devicePath == null) {
-                LOGGER.debug("Skipping USB serial device without device path: {}", sysClassTtyNode);
-                continue;
-            }
-
-            File deviceNode = new File(devicePath);
-            if (!(deviceNode.canRead() && deviceNode.canWrite())) {
-                LOGGER.debug("Missing permissions, skipping: {} => {}", sysClassTtyNode, deviceNode);
-                continue;
-            }
-
-            USBDevice description = new USBDevice();
-            description.setDeviceNode(deviceNode);
-
-            udevInfo.getKernelDeviceNodeName().ifPresent(description::setName);
-
-            applyIfPresent(properties, "ID_SERIAL", description::setSerialId);
-            applyIfPresent(properties, "ID_USB_VENDOR_ID", description::setVendorId);
-            applyIfPresent(properties, "ID_USB_MODEL_ID", description::setProductId);
-
-            out.add(description);
+            toUSBDevice(udevadm.info(sysClassTtyNode), true, sysClassTtyNode)
+                .ifPresent(out::add);
         }
 
         return out;
+    }
+
+    private static Optional<USBDevice> toUSBDevice(UDevAdmWrapper.DeviceInformation udevInfo, boolean checkPermissions, Object source) {
+        if (!udevInfo.getKernelDeviceNodeName().isPresent()) {
+            LOGGER.debug("Skipping USB serial device with unreported kernel device node name: {}", source);
+            return Optional.empty();
+        }
+
+        Map<String, String> properties = udevInfo.getProperties();
+        String devicePath = properties.get("DEVNAME");
+        if (devicePath == null) {
+            LOGGER.debug("Skipping USB serial device without device path: {}", source);
+            return Optional.empty();
+        }
+
+        File deviceNode = new File(devicePath);
+        if (checkPermissions && !(deviceNode.canRead() && deviceNode.canWrite())) {
+            LOGGER.debug("Missing permissions, skipping: {} => {}", source, deviceNode);
+            return Optional.empty();
+        }
+
+        USBDevice description = new USBDevice();
+        description.setDeviceNode(deviceNode);
+
+        udevInfo.getKernelDeviceNodeName().ifPresent(description::setName);
+
+        applyIfPresent(properties, "ID_SERIAL", description::setSerialId);
+        applyIfPresent(properties, "ID_USB_VENDOR_ID", description::setVendorId);
+        applyIfPresent(properties, "ID_USB_MODEL_ID", description::setProductId);
+
+        return Optional.of(description);
+    }
+
+    @Override
+    public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices(Predicate<String> ttyNameFilter) {
+        return new USBSerialMonitor(ttyNameFilter);
+    }
+
+    private static class USBSerialMonitor extends AsyncMonitor<USBDevice, Set<USBDevice>> {
+        private final Predicate<String> ttyNameFilter;
+        private final ObservableCollectionProxy<USBDevice, Set<USBDevice>> collectionProxy;
+
+        private UDevAdmWrapper.Monitor udevMonitor;
+
+        private USBSerialMonitor(Predicate<String> ttyNameFilter) {
+            super(HashSet::new);
+
+            this.ttyNameFilter = ttyNameFilter;
+
+            collectionProxy = getCollectionProxy();
+        }
+
+        @Override
+        protected void doStart() {
+            udevMonitor = new UDevAdmWrapper().monitor(UDevAdmWrapper.DeviceEventSource.UDEV, "tty", this::onDeviceEvent);
+        }
+
+        private void onDeviceEvent(UDevAdmWrapper.DeviceEvent event) {
+            UDevAdmWrapper.DeviceInformation info = event.getInfo();
+            String nodeName = info.getKernelDeviceNodeName().orElse(null);
+            if (nodeName == null) {
+                LOGGER.warn("Received device information without node name, ignoring: {}", event);
+                return;
+            }
+
+            if (!ttyNameFilter.test(nodeName)) {
+                LOGGER.debug("Ignoring event for unwanted device node: {}", event);
+                return;
+            }
+
+            UDevAdmWrapper.DeviceEventType eventType = event.getType();
+            Consumer<USBDevice> action;
+            boolean checkPermissions = true;
+            if (eventType == UDevAdmWrapper.DeviceEventType.ADD) {
+                action = collectionProxy::add;
+            } else {
+                if (eventType != UDevAdmWrapper.DeviceEventType.REMOVE) {
+                    LOGGER.warn("Unhandled event {}, interpreting as device removal: {}", event);
+                }
+
+                action = collectionProxy::remove;
+                checkPermissions = false; // device is gone, so there is nothing to check
+            }
+
+            toUSBDevice(info, checkPermissions, event).ifPresent(action);
+        }
+
+        @Override
+        protected void doShutdown() {
+            udevMonitor.terminate();
+        }
     }
 
     private static void applyIfPresent(Map<String, String> properties, String propertiesKey, Consumer<String> setter) {

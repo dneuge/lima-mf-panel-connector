@@ -162,6 +162,12 @@ public class MacOSDeviceDiscovery extends DeviceDiscovery {
         return out;
     }
 
+    @Override
+    public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices(Predicate<String> ttyNameFilter) {
+        // FIXME: implement
+        return null;
+    }
+
     private Optional<String> buildName(String vendorName, String productName, String serialId) {
         StringBuilder sb = new StringBuilder();
 
