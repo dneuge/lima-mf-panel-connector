@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,6 +104,10 @@ public class ExternalCommand {
     }
 
     public Process monitorLines(Collection<String> parameters, Consumer<String> callback) {
+        return monitorLines(parameters, Charset.defaultCharset(), callback);
+    }
+
+    public Process monitorLines(Collection<String> parameters, Charset charset, Consumer<String> callback) {
         List<String> command = new ArrayList<>();
         command.add(executable.getAbsolutePath());
         command.addAll(parameters);
@@ -121,7 +126,7 @@ public class ExternalCommand {
                 Throwable innerException = null;
                 try (
                     InputStream is = process.getInputStream();
-                    InputStreamReader isr = new InputStreamReader(is);
+                    InputStreamReader isr = new InputStreamReader(is, charset);
                     BufferedReader br = new BufferedReader(isr);
                 ) {
                     String line = br.readLine();
