@@ -93,18 +93,20 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
 
     @Override
     public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices(Predicate<String> ttyNameFilter) {
-        return new USBSerialMonitor(ttyNameFilter);
+        return new USBSerialMonitor(this, ttyNameFilter);
     }
 
     private static class USBSerialMonitor extends AsyncMonitor<USBDevice, Set<USBDevice>> {
+        private final LinuxDeviceDiscovery deviceDiscovery;
         private final Predicate<String> ttyNameFilter;
         private final ObservableCollectionProxy<USBDevice, Set<USBDevice>> collectionProxy;
 
         private UDevAdmWrapper.Monitor udevMonitor;
 
-        private USBSerialMonitor(Predicate<String> ttyNameFilter) {
+        private USBSerialMonitor(LinuxDeviceDiscovery deviceDiscovery, Predicate<String> ttyNameFilter) {
             super(HashSet::new);
 
+            this.deviceDiscovery = deviceDiscovery;
             this.ttyNameFilter = ttyNameFilter;
 
             collectionProxy = getCollectionProxy();
@@ -113,6 +115,9 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
         @Override
         protected void doStart() {
             udevMonitor = new UDevAdmWrapper().monitor(UDevAdmWrapper.DeviceEventSource.UDEV, "tty", this::onDeviceEvent);
+
+            deviceDiscovery.findUSBSerialDevices(ttyNameFilter)
+                           .forEach(collectionProxy::add);
         }
 
         private void onDeviceEvent(UDevAdmWrapper.DeviceEvent event) {
