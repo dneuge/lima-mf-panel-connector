@@ -20,9 +20,17 @@ import org.slf4j.LoggerFactory;
 public class MacOSDeviceDiscovery extends DeviceDiscovery {
     private static final Logger LOGGER = LoggerFactory.getLogger(MacOSDeviceDiscovery.class);
 
+    private static final Pattern DEFAULT_SERIAL_DEVICE_PATTERN = Pattern.compile("^(cu|tty)\\.usb(modem|serial).*");
+    private static final Predicate<String> DEFAULT_SERIAL_DEVICE_FILTER = s -> DEFAULT_SERIAL_DEVICE_PATTERN.matcher(s).matches();
+
     private static final Set<String> MAC_HANDLED_IO_OBJECT_CLASSES = new HashSet<>(Arrays.asList("AppleUSBACMData", "IOUserSerial"));
     private static final Set<String> MAC_USB_SERIAL_NODE_KEYS = new HashSet<>(Arrays.asList("IOCalloutDevice", "IODialinDevice"));
     private static final Pattern MAC_PREFERRED_SERIAL_NODE = Pattern.compile("^cu\\..*");
+
+    @Override
+    public Collection<USBDevice> findUSBSerialDevices() {
+        return findUSBSerialDevices(DEFAULT_SERIAL_DEVICE_FILTER);
+    }
 
     @Override
     public Collection<USBDevice> findUSBSerialDevices(Predicate<String> ttyNameFilter) {
@@ -160,6 +168,11 @@ public class MacOSDeviceDiscovery extends DeviceDiscovery {
         }
 
         return out;
+    }
+
+    @Override
+    public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices() {
+        return monitorUSBSerialDevices(DEFAULT_SERIAL_DEVICE_FILTER);
     }
 
     @Override

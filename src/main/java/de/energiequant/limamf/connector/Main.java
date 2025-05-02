@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -36,7 +35,6 @@ import de.energiequant.limamf.connector.panels.Panel;
 import de.energiequant.limamf.connector.panels.PanelEventListener;
 import de.energiequant.limamf.connector.simulator.SimulatorClient;
 import de.energiequant.limamf.connector.simulator.SimulatorEventListener;
-import de.energiequant.limamf.connector.utils.OperatingSystem;
 
 public class Main {
     // FIXME: only run while disclaimer is accepted
@@ -47,8 +45,6 @@ public class Main {
     // TODO: restart/rescan
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
-
-    private static final Pattern WANTED_TTY_NAME_PATTERN = OperatingSystem.isMacOS() ? Pattern.compile("^(cu|tty)\\.usb(modem|serial).*") : Pattern.compile("^tty(S|ACM).*");
 
     private final Set<String> enabledSerialIds = new HashSet<>();
     private final ConnectorConfiguration connectorConfiguration;
@@ -236,7 +232,8 @@ public class Main {
     private void connect() {
         LOGGER.info("Searching USB devices...");
         DeviceDiscovery deviceDiscovery = DeviceDiscovery.getInstance();
-        Collection<USBDevice> usbDevices = deviceDiscovery.findUSBSerialDevices(x -> WANTED_TTY_NAME_PATTERN.matcher(x).matches()).stream()
+        Collection<USBDevice> usbDevices = deviceDiscovery.findUSBSerialDevices()
+                                                          .stream()
                                                           .filter(deviceDiscovery::isSupportedUSBProduct)
                                                           .collect(Collectors.toList());
         if (usbDevices.isEmpty()) {

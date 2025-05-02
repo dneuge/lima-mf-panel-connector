@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,14 @@ import de.energiequant.limamf.connector.utils.OperatingSystem;
 
 public class LinuxDeviceDiscovery extends DeviceDiscovery {
     private static final Logger LOGGER = LoggerFactory.getLogger(LinuxDeviceDiscovery.class);
+
+    private static final Pattern DEFAULT_SERIAL_DEVICE_PATTERN = Pattern.compile("^tty(S|ACM).*");
+    private static final Predicate<String> DEFAULT_SERIAL_DEVICE_FILTER = s -> DEFAULT_SERIAL_DEVICE_PATTERN.matcher(s).matches();
+
+    @Override
+    public Collection<USBDevice> findUSBSerialDevices() {
+        return findUSBSerialDevices(DEFAULT_SERIAL_DEVICE_FILTER);
+    }
 
     @Override
     public Collection<USBDevice> findUSBSerialDevices(Predicate<String> sysClassTtyNameFilter) {
@@ -75,6 +84,11 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
         applyIfPresent(properties, "ID_USB_MODEL_ID", description::setProductId);
 
         return Optional.of(description);
+    }
+
+    @Override
+    public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices() {
+        return monitorUSBSerialDevices(DEFAULT_SERIAL_DEVICE_FILTER);
     }
 
     @Override

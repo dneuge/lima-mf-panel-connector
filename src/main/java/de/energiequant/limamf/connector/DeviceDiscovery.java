@@ -19,7 +19,7 @@ public abstract class DeviceDiscovery {
 
     private static final DeviceDiscovery INSTANCE;
 
-    private static final Predicate<String> ACCEPT_ALL = x -> true;
+    public static final Predicate<String> ACCEPT_ALL = x -> true;
 
     private static final Map<Integer, Set<Integer>> SUPPORTED_USB_PRODUCTS_BY_VENDOR = Maps.createHashMap(
         Maps.entry(
@@ -60,15 +60,11 @@ public abstract class DeviceDiscovery {
         return supportedProductIds.contains(productId);
     }
 
-    public Collection<USBDevice> findUSBSerialDevices() {
-        return findUSBSerialDevices(ACCEPT_ALL);
-    }
+    public abstract Collection<USBDevice> findUSBSerialDevices();
 
     public abstract Collection<USBDevice> findUSBSerialDevices(Predicate<String> ttyNameFilter);
 
-    public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices() {
-        return monitorUSBSerialDevices(ACCEPT_ALL);
-    }
+    public abstract AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices();
 
     public abstract AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices(Predicate<String> ttyNameFilter);
 
