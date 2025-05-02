@@ -1,6 +1,8 @@
 package de.energiequant.limamf.connector;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,6 +18,9 @@ import java.util.regex.Pattern;
 import org.apache.commons.configuration2.plist.XMLPropertyListConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import de.energiequant.limamf.connector.MacOSLogWrapper.LogStreamMonitor;
+import de.energiequant.limamf.connector.utils.TimeUtils;
 
 public class MacOSDeviceDiscovery extends DeviceDiscovery {
     private static final Logger LOGGER = LoggerFactory.getLogger(MacOSDeviceDiscovery.class);
@@ -177,8 +182,7 @@ public class MacOSDeviceDiscovery extends DeviceDiscovery {
 
     @Override
     public AsyncMonitor<USBDevice, Set<USBDevice>> monitorUSBSerialDevices(Predicate<String> ttyNameFilter) {
-        // FIXME: implement
-        return null;
+        return new USBSerialMonitor(this, ttyNameFilter);
     }
 
     private Optional<String> buildName(String vendorName, String productName, String serialId) {
@@ -200,5 +204,147 @@ public class MacOSDeviceDiscovery extends DeviceDiscovery {
 
         String out = sb.toString().trim();
         return out.isEmpty() ? Optional.empty() : Optional.of(out);
+    }
+
+    private static class USBSerialMonitor extends AsyncMonitor<USBDevice, Set<USBDevice>> {
+        private final MacOSDeviceDiscovery discovery;
+        private final Predicate<String> ttyNameFilter;
+        private final ObservableCollectionProxy<USBDevice, Set<USBDevice>> collectionProxy;
+
+        private LogStreamMonitor logStreamMonitor;
+
+        private Instant scheduledRescan = Instant.now();
+
+        private static final Duration REGULAR_RESCAN_INTERVAL = Duration.ofMinutes(1);
+        private static final Duration SETTLE_DELAY = Duration.ofSeconds(3);
+        private static final Duration THREAD_CHECK_INTERVAL = Duration.ofSeconds(5);
+
+        private final Thread scanThread;
+        private static final Duration MAX_JOIN_TIME = Duration.ofSeconds(5);
+
+        private static final Collection<String> LOG_KEYWORDS = Arrays.asList(
+            "USBHost",
+            "enumerateDevice",
+            "terminateDevice"
+        );
+
+        private static final int KERNEL_PID = 0;
+
+        private USBSerialMonitor(MacOSDeviceDiscovery discovery, Predicate<String> ttyNameFilter) {
+            super(HashSet::new);
+
+            this.discovery = discovery;
+            this.ttyNameFilter = ttyNameFilter;
+
+            collectionProxy = getCollectionProxy();
+            scanThread = new Thread(this::scanLoop);
+        }
+
+        @Override
+        protected void doStart() {
+            logStreamMonitor = new MacOSLogWrapper().stream(KERNEL_PID, this::onLogEntry);
+            scanThread.start();
+        }
+
+        private void onLogEntry(MacOSLogWrapper.LogEntry logEntry) {
+            String msg = logEntry.getEventMessage().orElse(null);
+            if (msg == null) {
+                return;
+            }
+
+            boolean relevant = false;
+            for (String keyword : LOG_KEYWORDS) {
+                if (msg.contains(keyword)) {
+                    LOGGER.debug("triggered by log keyword \"{}\", scheduling rescan: {}", keyword, logEntry);
+                    relevant = true;
+                    break;
+                }
+            }
+
+            if (!relevant) {
+                return;
+            }
+
+            Instant intendedRescan = logEntry.getTimestampLogged()
+                                             .orElseGet(logEntry::getTimestampParsed)
+                                             .plus(SETTLE_DELAY);
+
+            synchronized (this) {
+                scheduledRescan = TimeUtils.min(intendedRescan, scheduledRescan);
+                notifyAll();
+            }
+        }
+
+        private void scanLoop() {
+            long maxWaitMillis = THREAD_CHECK_INTERVAL.toMillis();
+
+            while (!shouldShutdown()) {
+                synchronized (this) {
+                    Instant now = Instant.now();
+                    long millisUntilRescan = Duration.between(now, scheduledRescan).toMillis();
+
+                    LOGGER.trace("scheduled scan is due in {}ms", millisUntilRescan);
+
+                    boolean isDue = (millisUntilRescan < 1);
+                    if (isDue) {
+                        scheduledRescan = now.plus(REGULAR_RESCAN_INTERVAL);
+                    } else {
+                        try {
+                            wait(Math.min(millisUntilRescan, maxWaitMillis));
+                        } catch (InterruptedException ex) {
+                            LOGGER.warn("interrupted while waiting for scheduled scan", ex);
+                            break;
+                        }
+
+                        continue;
+                    }
+                }
+
+                LOGGER.debug("scanning devices");
+
+                Set<USBDevice> currentDevices = new HashSet<>(discovery.findUSBSerialDevices(ttyNameFilter));
+                Set<USBDevice> previousDevices = collectionProxy.getAllPresent();
+
+                Set<USBDevice> addedDevices = new HashSet<>(currentDevices);
+                addedDevices.removeAll(previousDevices);
+                addedDevices.forEach(collectionProxy::add);
+
+                Set<USBDevice> removedDevices = new HashSet<>(previousDevices);
+                removedDevices.removeAll(currentDevices);
+                removedDevices.forEach(collectionProxy::remove);
+
+                LOGGER.debug("device scan complete");
+            }
+
+            LOGGER.debug("scan thread terminates, shutting down monitor");
+            shutdown();
+        }
+
+        @Override
+        protected void doShutdown() {
+            if (logStreamMonitor != null) {
+                logStreamMonitor.terminate();
+            }
+
+            if (!scanThread.isAlive()) {
+                return;
+            }
+
+            synchronized (this) {
+                // wake up scan thread
+                notifyAll();
+            }
+
+            try {
+                scanThread.join(MAX_JOIN_TIME.toMillis());
+            } catch (InterruptedException ex) {
+                LOGGER.warn("interrupted while waiting to join scan thread", ex);
+                throw new RuntimeException("interrupted while waiting to join scan thread", ex);
+            }
+
+            if (scanThread.isAlive()) {
+                LOGGER.warn("scan thread did not terminate within expected timeout");
+            }
+        }
     }
 }

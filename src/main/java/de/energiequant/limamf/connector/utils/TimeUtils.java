@@ -17,4 +17,8 @@ public class TimeUtils {
 
         return Optional.of(remaining.toMillis());
     }
+
+    public static Instant min(Instant a, Instant b) {
+        return a.isBefore(b) ? a : b;
+    }
 }
