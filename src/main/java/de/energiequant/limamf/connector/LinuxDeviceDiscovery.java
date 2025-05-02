@@ -147,7 +147,9 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
 
         @Override
         protected void doShutdown() {
-            udevMonitor.terminate();
+            if (udevMonitor != null) {
+                udevMonitor.terminate();
+            }
         }
     }
 
