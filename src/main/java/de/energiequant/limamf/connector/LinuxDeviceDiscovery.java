@@ -68,6 +68,14 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
             return Optional.empty();
         }
 
+        String vendorId = properties.get("ID_USB_VENDOR_ID");
+        String productId = properties.get("ID_USB_MODEL_ID");
+
+        if (vendorId == null || productId == null) {
+            LOGGER.debug("vendor/product ID is missing, not a USB device: {}", udevInfo);
+            return Optional.empty();
+        }
+
         File deviceNode = new File(devicePath);
         if (checkPermissions && !(deviceNode.canRead() && deviceNode.canWrite())) {
             LOGGER.debug("Missing permissions, skipping: {} => {}", source, deviceNode);
@@ -77,11 +85,12 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
         USBDevice description = new USBDevice();
         description.setDeviceNode(deviceNode);
 
+        description.setVendorId(vendorId);
+        description.setProductId(productId);
+
         udevInfo.getKernelDeviceNodeName().ifPresent(description::setName);
 
         applyIfPresent(properties, "ID_SERIAL", description::setSerialId);
-        applyIfPresent(properties, "ID_USB_VENDOR_ID", description::setVendorId);
-        applyIfPresent(properties, "ID_USB_MODEL_ID", description::setProductId);
 
         return Optional.of(description);
     }
