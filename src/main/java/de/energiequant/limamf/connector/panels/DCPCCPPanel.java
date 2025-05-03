@@ -1,5 +1,7 @@
 package de.energiequant.limamf.connector.panels;
 
+import static de.energiequant.limamf.connector.DeviceCommunicator.probe;
+
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,11 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -75,9 +72,6 @@ public class DCPCCPPanel implements Panel {
     private final AtomicReference<Instant> rightButtonPushed = new AtomicReference<>();
 
     private static final String EXPECTED_NAME = "CL650 DCP-CCP";
-
-    private static final Duration PROBE_TIMEOUT = Duration.ofSeconds(5);
-    private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(10);
 
     private static final Duration LONG_PRESS_DURATION = Duration.ofMillis(250);
 
@@ -701,7 +695,7 @@ public class DCPCCPPanel implements Panel {
         }
 
         LOGGER.info("Probing {}", usbDevice);
-        IdentificationInfoMessage identification = probe(deviceNode, PROBE_TIMEOUT).orElse(null);
+        IdentificationInfoMessage identification = probe(deviceNode).orElse(null);
         if (identification == null) {
             LOGGER.warn("Probe failed, ignoring: {}", usbDevice);
             return Optional.empty();
@@ -719,35 +713,6 @@ public class DCPCCPPanel implements Panel {
         }
 
         return Optional.of(new DCPCCPPanel(eventListener, usbDevice, connectorConfiguration, interfaceName, identification.getSerial(), identification.getVersion()));
-    }
-
-    private static Optional<IdentificationInfoMessage> probe(File deviceNode, Duration timeout) throws InterruptedException {
-        CompletableFuture<IdentificationInfoMessage> future = new CompletableFuture<>();
-        DeviceCommunicator communicator = new DeviceCommunicator(deviceNode, (c, msg) -> {
-            if (msg instanceof IdentificationInfoMessage) {
-                LOGGER.debug("Probe for {} completed: {}", deviceNode, msg);
-                future.complete((IdentificationInfoMessage) msg);
-            } else {
-                LOGGER.warn("Received unexpected message while probing {}: {}", deviceNode, msg);
-                c.shutdownAsync();
-                future.cancel(false);
-            }
-        }
-        );
-        communicator.send(new GetInfoMessage());
-
-        IdentificationInfoMessage result = null;
-        try {
-            result = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (CancellationException | ExecutionException | TimeoutException ex) {
-            LOGGER.warn("Probing {} failed", deviceNode, ex);
-        }
-
-        if (!communicator.waitForShutdown(SHUTDOWN_TIMEOUT)) {
-            throw new ShutdownFailed(deviceNode);
-        }
-
-        return Optional.ofNullable(result);
     }
 
     private void onCommandMessage(DeviceCommunicator communicator, CommandMessage msg) {
@@ -1091,12 +1056,6 @@ public class DCPCCPPanel implements Panel {
                 brightness = simulatorBrightness;
                 submitBrightness();
             }
-        }
-    }
-
-    private static class ShutdownFailed extends RuntimeException {
-        ShutdownFailed(File deviceNode) {
-            super("Failed to shut down communication with " + deviceNode);
         }
     }
 }

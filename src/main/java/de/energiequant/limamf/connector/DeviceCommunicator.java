@@ -8,6 +8,11 @@ import java.time.Instant;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -18,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import de.energiequant.limamf.compat.protocol.CommandMessage;
 import de.energiequant.limamf.compat.protocol.CommandMessageDecoder;
 import de.energiequant.limamf.compat.protocol.GetInfoMessage;
+import de.energiequant.limamf.compat.protocol.IdentificationInfoMessage;
 import de.energiequant.limamf.connector.utils.OperatingSystem;
 
 public class DeviceCommunicator {
@@ -37,6 +43,9 @@ public class DeviceCommunicator {
     private final Thread receiveThread;
 
     private static final long CHECK_INTERVAL = 5000;
+    
+    private static final Duration PROBE_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(10);
 
     public DeviceCommunicator(File deviceNode, BiConsumer<DeviceCommunicator, CommandMessage> receiveCallback) {
         this(deviceNode, null, receiveCallback);
@@ -255,5 +264,44 @@ public class DeviceCommunicator {
         }
 
         return (start == 0) ? s : s.substring(start);
+    }
+
+    public static Optional<IdentificationInfoMessage> probe(File deviceNode) throws InterruptedException {
+        return probe(deviceNode, PROBE_TIMEOUT);
+    }
+
+    public static Optional<IdentificationInfoMessage> probe(File deviceNode, Duration timeout) throws InterruptedException {
+        CompletableFuture<IdentificationInfoMessage> future = new CompletableFuture<>();
+        DeviceCommunicator communicator = new DeviceCommunicator(deviceNode, (c, msg) -> {
+            if (msg instanceof IdentificationInfoMessage) {
+                LOGGER.debug("Probe for {} completed: {}", deviceNode, msg);
+                future.complete((IdentificationInfoMessage) msg);
+            } else {
+                LOGGER.warn("Received unexpected message while probing {}: {}", deviceNode, msg);
+                c.shutdownAsync();
+                future.cancel(false);
+            }
+        }
+        );
+        communicator.send(new GetInfoMessage());
+
+        IdentificationInfoMessage result = null;
+        try {
+            result = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (CancellationException | ExecutionException | TimeoutException ex) {
+            LOGGER.warn("Probing {} failed", deviceNode, ex);
+        }
+
+        if (!communicator.waitForShutdown(SHUTDOWN_TIMEOUT)) {
+            throw new ShutdownFailed(deviceNode);
+        }
+
+        return Optional.ofNullable(result);
+    }
+
+    private static class ShutdownFailed extends RuntimeException {
+        ShutdownFailed(File deviceNode) {
+            super("Failed to shut down communication with " + deviceNode);
+        }
     }
 }
