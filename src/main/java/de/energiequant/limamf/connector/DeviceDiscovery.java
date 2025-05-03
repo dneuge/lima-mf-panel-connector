@@ -21,7 +21,7 @@ public abstract class DeviceDiscovery {
 
     public static final Predicate<String> ACCEPT_ALL = x -> true;
 
-    private static final Map<Integer, Set<Integer>> SUPPORTED_USB_PRODUCTS_BY_VENDOR = Maps.createHashMap(
+    private static final Map<Integer, Set<Integer>> KNOWN_USB_PRODUCTS_BY_VENDOR = Maps.createHashMap(
         Maps.entry(
             // Raspberry Pi
             0x2E8A, new HashSet<>(Arrays.asList(
@@ -41,7 +41,7 @@ public abstract class DeviceDiscovery {
         }
     }
 
-    public boolean isSupportedUSBProduct(USBDevice device) {
+    public boolean isKnownUSBProduct(USBDevice device) {
         int vendorId = device.getVendorId().orElse(-1);
         if (vendorId < 0) {
             return false;
@@ -52,12 +52,12 @@ public abstract class DeviceDiscovery {
             return false;
         }
 
-        Set<Integer> supportedProductIds = SUPPORTED_USB_PRODUCTS_BY_VENDOR.get(vendorId);
-        if (supportedProductIds == null) {
+        Set<Integer> knownProductIds = KNOWN_USB_PRODUCTS_BY_VENDOR.get(vendorId);
+        if (knownProductIds == null) {
             return false;
         }
 
-        return supportedProductIds.contains(productId);
+        return knownProductIds.contains(productId);
     }
 
     public abstract Collection<USBDevice> findUSBSerialDevices();

@@ -234,7 +234,7 @@ public class Main {
         DeviceDiscovery deviceDiscovery = DeviceDiscovery.getInstance();
         Collection<USBDevice> usbDevices = deviceDiscovery.findUSBSerialDevices()
                                                           .stream()
-                                                          .filter(deviceDiscovery::isSupportedUSBProduct)
+                                                          .filter(deviceDiscovery::isKnownUSBProduct)
                                                           .collect(Collectors.toList());
         if (usbDevices.isEmpty()) {
             LOGGER.error("no supported USB devices found");
