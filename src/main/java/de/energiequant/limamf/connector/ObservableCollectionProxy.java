@@ -54,6 +54,17 @@ public class ObservableCollectionProxy<T, C extends Collection<T>> {
         return this;
     }
 
+    public ObservableCollectionProxy<T, C> detach(Listener<T> listener) {
+        synchronized (this) {
+            boolean removed = listeners.remove(listener);
+            if (!removed) {
+                LOGGER.warn("tried to detach a listener which has not been attached: {}; {}", listener, this);
+            }
+        }
+
+        return this;
+    }
+
     public boolean add(T obj) {
         boolean isNew;
         synchronized (this) {
