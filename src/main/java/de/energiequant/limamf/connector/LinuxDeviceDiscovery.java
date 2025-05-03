@@ -20,7 +20,7 @@ import de.energiequant.limamf.connector.utils.OperatingSystem;
 public class LinuxDeviceDiscovery extends DeviceDiscovery {
     private static final Logger LOGGER = LoggerFactory.getLogger(LinuxDeviceDiscovery.class);
 
-    private static final Pattern DEFAULT_SERIAL_DEVICE_PATTERN = Pattern.compile("^tty(S|ACM).*");
+    private static final Pattern DEFAULT_SERIAL_DEVICE_PATTERN = Pattern.compile("^tty(S|ACM|USB).*");
     private static final Predicate<String> DEFAULT_SERIAL_DEVICE_FILTER = s -> DEFAULT_SERIAL_DEVICE_PATTERN.matcher(s).matches();
 
     @Override
