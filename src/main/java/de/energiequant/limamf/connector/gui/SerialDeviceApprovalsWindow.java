@@ -111,7 +111,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         private LinkedHashSet<USBDevice> knownDevices = new LinkedHashSet<>();
         private List<JCheckBox> checkBoxes = new ArrayList<>();
         private Set<USBDevice> connectedDevices = new HashSet<>();
-        private Set<USBDevice> approvedDevices = new HashSet<>();
+        private Set<USBDevice> approvedDeviceIds = new HashSet<>();
 
         private DeviceListPanel() {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -174,7 +174,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 sb.append(deviceSerial);
                 sb.append(" ");
 
-                boolean isApproved = approvedDevices.contains(device);
+                boolean isApproved = approvedDeviceIds.contains(device.copyOnlyIDs());
                 checkBox.setSelected(isApproved);
 
                 if (connectedDevices.contains(device)) {
@@ -216,7 +216,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
             if (!selected) {
                 LOGGER.info("Revoked serial device approval: {}", device);
-                approvedDevices.remove(device);
+                approvedDeviceIds.remove(device.copyOnlyIDs());
             } else {
                 File deviceNode = device.getDeviceNode().orElse(null);
                 if (deviceNode == null || !connectedDevices.contains(device)) {
@@ -261,7 +261,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 }
 
                 LOGGER.info("Serial device approved: {} => {}", device, identification);
-                approvedDevices.add(device);
+                approvedDeviceIds.add(device.copyOnlyIDs());
 
                 JOptionPane.showMessageDialog(this, "Serial device " + deviceNode.getAbsolutePath() + " has successfully been probed.", "Probe successful", JOptionPane.INFORMATION_MESSAGE);
             }

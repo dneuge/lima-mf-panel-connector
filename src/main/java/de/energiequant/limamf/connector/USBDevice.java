@@ -76,6 +76,16 @@ public class USBDevice {
         return this;
     }
 
+    public USBDevice copyOnlyIDs() {
+        USBDevice copy = new USBDevice();
+
+        copy.vendorId = this.vendorId;
+        copy.productId = this.productId;
+        copy.serialId = this.serialId;
+
+        return copy;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("USBDevice(");
