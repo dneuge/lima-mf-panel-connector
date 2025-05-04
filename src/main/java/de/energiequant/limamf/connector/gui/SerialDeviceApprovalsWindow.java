@@ -120,11 +120,15 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         private void clear() {
             LOGGER.debug("clearing device list");
             knownDevices.clear();
+            approvedDeviceIds.clear();
             connectedDevices.clear();
             checkBoxes.clear();
             removeAll();
 
-            // TODO: add all devices from config
+            for (USBDevice configuredDeviceId : config.getUSBInterfaceIds()) {
+                knownDevices.add(configuredDeviceId);
+                approvedDeviceIds.add(configuredDeviceId);
+            }
 
             updateUIList();
         }
