@@ -8,10 +8,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BoxLayout;
@@ -108,9 +110,9 @@ public class SerialDeviceApprovalsWindow extends JDialog {
     }
 
     private class DeviceListPanel extends JPanel implements ObservableCollectionProxy.Listener<USBDevice> {
-        private LinkedHashSet<USBDevice> knownDevices = new LinkedHashSet<>();
+        private LinkedHashSet<USBDevice> knownDeviceIds = new LinkedHashSet<>();
         private List<JCheckBox> checkBoxes = new ArrayList<>();
-        private Set<USBDevice> connectedDevices = new HashSet<>();
+        private Map<USBDevice, USBDevice> connectedDevicesById = new HashMap<>();
         private Set<USBDevice> approvedDeviceIds = new HashSet<>();
 
         private DeviceListPanel() {
@@ -119,14 +121,14 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
         private void clear() {
             LOGGER.debug("clearing device list");
-            knownDevices.clear();
+            knownDeviceIds.clear();
             approvedDeviceIds.clear();
-            connectedDevices.clear();
+            connectedDevicesById.clear();
             checkBoxes.clear();
             removeAll();
 
             for (USBDevice configuredDeviceId : config.getUSBInterfaceIds()) {
-                knownDevices.add(configuredDeviceId);
+                knownDeviceIds.add(configuredDeviceId);
                 approvedDeviceIds.add(configuredDeviceId);
             }
 
@@ -141,23 +143,31 @@ public class SerialDeviceApprovalsWindow extends JDialog {
             }
 
             LOGGER.debug("recording known device (monitor): {}", obj);
-            knownDevices.add(obj);
-            connectedDevices.add(obj);
+            USBDevice deviceId = obj.copyOnlyIDs();
+            knownDeviceIds.add(deviceId);
+            USBDevice previous = connectedDevicesById.put(deviceId, obj);
+            if (previous != null) {
+                connectedDevicesById.remove(deviceId);
+                throw new IllegalArgumentException("Device with same ID seen twice; sharing the same ID currently is not supported: " + previous + ", " + obj);
+            }
             updateUIList();
         }
 
         @Override
         public void onRemoved(USBDevice obj) {
             LOGGER.debug("recording disconnected device (monitor): {}", obj);
-            connectedDevices.remove(obj);
+            connectedDevicesById.remove(obj.copyOnlyIDs());
             updateUIList();
         }
 
         private void updateUIList() {
-            LOGGER.debug("updating UI; {} known, {} connected, already have {} checkboxes", knownDevices.size(), connectedDevices.size(), checkBoxes.size());
+            LOGGER.debug(
+                "updating UI; {} known, {} connected, already have {} checkboxes",
+                knownDeviceIds.size(), connectedDevicesById.size(), checkBoxes.size()
+            );
 
             int i = 0;
-            for (USBDevice device : knownDevices) {
+            for (USBDevice device : knownDeviceIds) {
                 while (i >= checkBoxes.size()) {
                     JCheckBox tmp = new JCheckBox();
                     final int deviceIndex = checkBoxes.size();
@@ -178,10 +188,11 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 sb.append(deviceSerial);
                 sb.append(" ");
 
-                boolean isApproved = approvedDeviceIds.contains(device.copyOnlyIDs());
+                USBDevice deviceId = device.copyOnlyIDs();
+                boolean isApproved = approvedDeviceIds.contains(deviceId);
                 checkBox.setSelected(isApproved);
 
-                if (connectedDevices.contains(device)) {
+                if (connectedDevicesById.containsKey(deviceId)) {
                     sb.append("[connected]");
                     checkBox.setEnabled(true);
                 } else {
@@ -202,34 +213,39 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         private void onCheckBoxChange(int index, ActionEvent event) {
             boolean selected = ((JCheckBox) event.getSource()).isSelected();
 
-            Iterator<USBDevice> it = knownDevices.iterator();
-            USBDevice device = null;
+            Iterator<USBDevice> it = knownDeviceIds.iterator();
+            USBDevice deviceId = null;
             int i = 0;
             while (it.hasNext()) {
                 USBDevice tmp = it.next();
                 if (i == index) {
-                    device = tmp;
+                    deviceId = tmp;
                     break;
                 }
                 i++;
             }
 
-            if (device == null) {
+            if (deviceId == null) {
                 throw new IllegalArgumentException("no device for checkbox index " + index);
             }
 
             if (!selected) {
-                LOGGER.info("Revoked serial device approval: {}", device);
-                approvedDeviceIds.remove(device.copyOnlyIDs());
+                LOGGER.info("Revoked serial device approval: {}", deviceId);
+                approvedDeviceIds.remove(deviceId);
             } else {
-                File deviceNode = device.getDeviceNode().orElse(null);
-                if (deviceNode == null || !connectedDevices.contains(device)) {
-                    LOGGER.debug("prevented selection of unconnected device {}", device);
+                USBDevice device = connectedDevicesById.get(deviceId);
+                if (device == null) {
+                    LOGGER.debug("prevented selection of unconnected device {}", deviceId);
                     updateUIList(); // update UI to reset checkbox state
                     return;
                 }
 
-                if (!DeviceDiscovery.getInstance().isKnownUSBProduct(device)) {
+                File deviceNode = device.getDeviceNode().orElse(null);
+                if (deviceNode == null) {
+                    throw new IllegalArgumentException("missing node for known device index " + index + ": " + device);
+                }
+
+                if (!DeviceDiscovery.getInstance().isKnownUSBProduct(deviceId)) {
                     int res = JOptionPane.showConfirmDialog(this, "The selected serial device is not on the list of hardware commonly known to be used for MobiFlight.\n\nAre you sure you want to send probe commands?", "Uncommon device selected", JOptionPane.YES_NO_OPTION);
                     if (res != JOptionPane.YES_OPTION) {
                         LOGGER.debug("Cancelled approval of uncommon serial device: {}", device);
