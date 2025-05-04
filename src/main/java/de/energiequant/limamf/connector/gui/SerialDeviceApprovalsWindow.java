@@ -113,6 +113,9 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         LOGGER.debug("window closing");
         windowClosed = true;
         connectedUSBDevices.detach(deviceListPanel);
+
+        // TODO: save to Configuration
+        deviceListPanel.clear();
     }
 
     private class DeviceListPanel extends JPanel implements ObservableCollectionProxy.Listener<USBDevice> {
