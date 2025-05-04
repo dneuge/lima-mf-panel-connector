@@ -43,6 +43,8 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
     private final DeviceListPanel deviceListPanel;
 
+    private boolean windowClosed = true;
+
     public SerialDeviceApprovalsWindow(Configuration config, ObservableCollectionProxy<USBDevice, ?> connectedUSBDevices) {
         this.config = config;
         this.connectedUSBDevices = connectedUSBDevices;
@@ -88,8 +90,10 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
     @Override
     protected void processWindowEvent(WindowEvent e) {
+        LOGGER.debug("window event: {}", e);
+
         int eventId = e.getID();
-        if (eventId == WindowEvent.WINDOW_OPENED) {
+        if ((eventId == WindowEvent.WINDOW_OPENED) || (windowClosed && (eventId == WindowEvent.WINDOW_ACTIVATED))) {
             onWindowOpened();
         } else if (eventId == WindowEvent.WINDOW_CLOSING) {
             onWindowClosing();
@@ -100,12 +104,14 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
     private void onWindowOpened() {
         LOGGER.debug("window opened");
+        windowClosed = false;
         deviceListPanel.clear();
         connectedUSBDevices.attach(true, deviceListPanel);
     }
 
     private void onWindowClosing() {
         LOGGER.debug("window closing");
+        windowClosed = true;
         connectedUSBDevices.detach(deviceListPanel);
     }
 
