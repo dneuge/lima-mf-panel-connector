@@ -23,6 +23,9 @@ public class Configuration {
     private static final String PROPERTY_VERSION = "configVersion";
     private static final String PROPERTY_DISCLAIMER = "disclaimerAccepted";
     private static final String PROPERTY_USB_INTERFACES_PREFIX = "interfaces.usb.";
+    private static final String PROPERTY_USB_INTERFACES_VENDOR = "vendorId";
+    private static final String PROPERTY_USB_INTERFACES_PRODUCT = "productId";
+    private static final String PROPERTY_USB_INTERFACES_SERIAL = "serialId";
     private static final String PROPERTY_MODULES_PREFIX = "modules.";
     private static final String PROPERTY_MODULE_TYPE = "type";
     private static final String PROPERTY_MODULE_NAME = "name";
@@ -31,7 +34,7 @@ public class Configuration {
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL = "mccSerial";
 
     private String acceptedDisclaimer;
-    private final Set<String> usbInterfaceSerials = new HashSet<>();
+    private final Set<USBDevice> usbInterfaceIds = new HashSet<>();
     private final Collection<Module> modules = new ArrayList<>();
 
     public static class Module {
@@ -78,9 +81,11 @@ public class Configuration {
 
         acceptedDisclaimer = getOptionalString(properties, PROPERTY_DISCLAIMER).orElse(null);
 
-        streamEntries(properties).filter(x -> x.getKey().startsWith(PROPERTY_USB_INTERFACES_PREFIX))
-                                 .map(Map.Entry::getValue)
-                                 .forEach(usbInterfaceSerials::add);
+        streamKeys(properties).filter(x -> x.startsWith(PROPERTY_USB_INTERFACES_PREFIX))
+                              .map(x -> x.substring(0, x.indexOf(".", PROPERTY_USB_INTERFACES_PREFIX.length()) + 1))
+                              .distinct()
+                              .map(x -> parseUSBInterface(properties, x))
+                              .forEach(usbInterfaceIds::add);
 
         streamKeys(properties).filter(x -> x.startsWith(PROPERTY_MODULES_PREFIX))
                               .map(x -> x.substring(0, x.indexOf(".", PROPERTY_MODULES_PREFIX.length()) + 1))
@@ -97,8 +102,15 @@ public class Configuration {
         return new ArrayList<>(modules);
     }
 
-    public Set<String> getUSBInterfaceSerials() {
-        return new HashSet<>(usbInterfaceSerials);
+    public Set<USBDevice> getUSBInterfaceIds() {
+        return new HashSet<>(usbInterfaceIds);
+    }
+
+    public USBDevice parseUSBInterface(Properties properties, String prefix) {
+        return new USBDevice()
+            .setVendorId(Integer.parseUnsignedInt(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_VENDOR), 16))
+            .setProductId(Integer.parseUnsignedInt(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT), 16))
+            .setSerialId(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_SERIAL));
     }
 
     private static Stream<String> streamKeys(Properties properties) {

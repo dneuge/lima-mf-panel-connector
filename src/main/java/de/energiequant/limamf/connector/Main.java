@@ -179,7 +179,11 @@ public class Main {
     private Main(Configuration config) {
         // TODO: relocate to GUI, accept none-existing config
 
-        enabledSerialIds.addAll(config.getUSBInterfaceSerials());
+        config.getUSBInterfaceIds()
+              .stream()
+              .map(USBDevice::getSerialId)
+              .map(x -> x.orElseThrow(() -> new IllegalArgumentException("approved devices are required to have a serial ID")))
+              .forEach(enabledSerialIds::add);
         if (enabledSerialIds.isEmpty()) {
             throw new IllegalArgumentException("at least one serial ID is required");
         }
