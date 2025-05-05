@@ -3,10 +3,17 @@ package de.energiequant.limamf.connector;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class USBDeviceId {
+    private static final Logger LOGGER = LoggerFactory.getLogger(USBDeviceId.class);
+
     private final int vendor;
     private final int product;
     private final String serial;
+
+    private static final int MAX_ID = 65535; // all IDs are 16-bit integers
 
     private USBDeviceId(int vendor, int product, String serial) {
         this.vendor = vendor;
@@ -77,7 +84,12 @@ public class USBDeviceId {
         }
 
         public Builder setVendor(int vendorId) {
+            if (vendorId < 0 || vendorId > MAX_ID) {
+                throw new IllegalArgumentException("Invalid vendor ID: " + vendorId);
+            }
+
             this.vendor = vendorId;
+
             return this;
         }
 
@@ -86,12 +98,23 @@ public class USBDeviceId {
         }
 
         public Builder setProduct(int productId) {
+            if (productId < 0 || productId > MAX_ID) {
+                throw new IllegalArgumentException("Invalid product ID: " + productId);
+            }
+
             this.product = productId;
+
             return this;
         }
 
         public Builder setSerial(String serial) {
+            if (serial.trim().isEmpty()) {
+                LOGGER.debug("blank serial cannot be used; resetting to non-existent");
+                serial = null;
+            }
+            
             this.serial = serial;
+
             return this;
         }
 
