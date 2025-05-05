@@ -108,8 +108,8 @@ public class Configuration {
 
     public USBDeviceId parseUSBInterface(Properties properties, String prefix) {
         return new USBDeviceId()
-            .setVendorId(Integer.parseUnsignedInt(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_VENDOR), 16))
-            .setProduct(Integer.parseUnsignedInt(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT), 16))
+            .setVendorId(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_VENDOR))
+            .setProduct(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT))
             .setSerial(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_SERIAL));
     }
 
