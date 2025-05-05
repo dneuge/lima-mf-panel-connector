@@ -298,7 +298,7 @@ public class Main {
         AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor = DeviceDiscovery.getInstance().monitorUSBSerialDevices(); // TODO: use globally; optionally override filter
         usbSerialDeviceMonitor.start();
         Main main = new Main(config);
-        new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), main::terminate);
+        new MainWindow(main, main::terminate);
         main.connect();
     }
 
