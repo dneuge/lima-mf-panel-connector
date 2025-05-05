@@ -38,30 +38,22 @@ public class Configuration {
     private final Collection<Module> modules = new ArrayList<>();
 
     public static class Module {
-        private final String type;
-        private final String name;
-        private final String deviceSerial;
+        private final ModuleId id;
         private final String connectorConfig;
         private final String connectorConfigSerial;
 
         private Module(Properties properties, String prefix) {
-            this.type = getMandatoryString(properties, prefix + PROPERTY_MODULE_TYPE);
-            this.name = getMandatoryString(properties, prefix + PROPERTY_MODULE_NAME);
-            this.deviceSerial = getMandatoryString(properties, prefix + PROPERTY_MODULE_DEVICE_SERIAL);
+            this.id = ModuleId.builder()
+                              .setType(getMandatoryString(properties, prefix + PROPERTY_MODULE_TYPE))
+                              .setName(getMandatoryString(properties, prefix + PROPERTY_MODULE_NAME))
+                              .setSerial(getMandatoryString(properties, prefix + PROPERTY_MODULE_DEVICE_SERIAL))
+                              .build();
             this.connectorConfig = getMandatoryString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG);
             this.connectorConfigSerial = getOptionalString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL).orElse(null);
         }
 
-        public String getType() {
-            return type;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getDeviceSerial() {
-            return deviceSerial;
+        public ModuleId getId() {
+            return id;
         }
 
         public String getConnectorConfig() {
