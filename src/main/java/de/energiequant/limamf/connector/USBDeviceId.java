@@ -14,20 +14,12 @@ public class USBDeviceId {
         this.serial = serial;
     }
 
-    public Optional<Integer> getVendor() {
-        if (vendor < 0) {
-            return Optional.empty();
-        }
-
-        return Optional.of(vendor);
+    public int getVendor() {
+        return vendor;
     }
 
-    public Optional<Integer> getProduct() {
-        if (product < 0) {
-            return Optional.empty();
-        }
-
-        return Optional.of(product);
+    public int getProduct() {
+        return product;
     }
 
     public Optional<String> getSerial() {
@@ -104,6 +96,14 @@ public class USBDeviceId {
         }
 
         public USBDeviceId build() {
+            if (vendor < 0) {
+                throw new IllegalArgumentException("missing vendor ID");
+            }
+
+            if (product < 0) {
+                throw new IllegalArgumentException("missing product ID");
+            }
+
             return new USBDeviceId(vendor, product, serial);
         }
     }

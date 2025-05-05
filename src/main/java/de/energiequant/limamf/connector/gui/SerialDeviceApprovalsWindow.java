@@ -150,8 +150,8 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         @Override
         public void onAdded(USBDevice obj) {
             USBDeviceId id = obj.getId();
-            if (!(id.getVendor().isPresent() && id.getProduct().isPresent() && id.getSerial().isPresent())) {
-                LOGGER.debug("missing essential information, ignoring: {}", obj);
+            if (!id.getSerial().isPresent()) {
+                LOGGER.debug("missing serial ID, ignoring: {}", obj);
                 return;
             }
 
@@ -192,9 +192,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
                 StringBuilder sb = new StringBuilder();
 
-                int vendorId = id.getVendor().orElseThrow(() -> new IllegalArgumentException("missing vendor ID: " + id));
-                int productId = id.getProduct().orElseThrow(() -> new IllegalArgumentException("missing product ID: " + id));
-                sb.append(String.format("%04X %04X ", vendorId, productId));
+                sb.append(String.format("%04X %04X ", id.getVendor(), id.getProduct()));
 
                 String deviceSerial = id.getSerial().orElseThrow(() -> new IllegalArgumentException("missing serial ID: " + id));
                 sb.append(deviceSerial);

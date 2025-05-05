@@ -46,22 +46,12 @@ public abstract class DeviceDiscovery {
     }
 
     public boolean isKnownUSBProduct(USBDeviceId id) {
-        int vendorId = id.getVendor().orElse(-1);
-        if (vendorId < 0) {
-            return false;
-        }
-
-        int productId = id.getProduct().orElse(-1);
-        if (productId < 0) {
-            return false;
-        }
-
-        Set<Integer> knownProductIds = KNOWN_USB_PRODUCTS_BY_VENDOR.get(vendorId);
+        Set<Integer> knownProductIds = KNOWN_USB_PRODUCTS_BY_VENDOR.get(id.getVendor());
         if (knownProductIds == null) {
             return false;
         }
 
-        return knownProductIds.contains(productId);
+        return knownProductIds.contains(id.getProduct());
     }
 
     public abstract Collection<USBDevice> findUSBSerialDevices();
