@@ -34,7 +34,7 @@ public class Configuration {
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL = "mccSerial";
 
     private String acceptedDisclaimer;
-    private final Set<USBDevice> usbInterfaceIds = new HashSet<>();
+    private final ObservableCollectionProxy<USBDevice, Set<USBDevice>> usbInterfaceIds = new ObservableCollectionProxy<>(HashSet::new);
     private final Collection<Module> modules = new ArrayList<>();
 
     public static class Module {
@@ -102,8 +102,8 @@ public class Configuration {
         return new ArrayList<>(modules);
     }
 
-    public Set<USBDevice> getUSBInterfaceIds() {
-        return new HashSet<>(usbInterfaceIds);
+    public ObservableCollectionProxy<USBDevice, Set<USBDevice>> getUSBInterfaceIds() {
+        return usbInterfaceIds;
     }
 
     public USBDevice parseUSBInterface(Properties properties, String prefix) {

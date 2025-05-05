@@ -180,6 +180,7 @@ public class Main {
         // TODO: relocate to GUI, accept none-existing config
 
         config.getUSBInterfaceIds()
+              .getAllPresent()
               .stream()
               .map(USBDevice::getSerialId)
               .map(x -> x.orElseThrow(() -> new IllegalArgumentException("approved devices are required to have a serial ID")))
@@ -294,8 +295,10 @@ public class Main {
 
     public static void main(String[] args) {
         Configuration config = Configuration.loadProperties(new File(args[0]));
+        AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor = DeviceDiscovery.getInstance().monitorUSBSerialDevices(); // TODO: use globally; optionally override filter
+        usbSerialDeviceMonitor.start();
         Main main = new Main(config);
-        new MainWindow(main, main::terminate);
+        new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), main::terminate);
         main.connect();
     }
 

@@ -40,6 +40,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
     private final Configuration config;
     private final ObservableCollectionProxy<USBDevice, ?> connectedUSBDevices;
+    private final ObservableCollectionProxy<USBDevice, ?> configuredUSBDeviceIds;
 
     private final DeviceListPanel deviceListPanel;
 
@@ -48,6 +49,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
     public SerialDeviceApprovalsWindow(Configuration config, ObservableCollectionProxy<USBDevice, ?> connectedUSBDevices) {
         this.config = config;
         this.connectedUSBDevices = connectedUSBDevices;
+        this.configuredUSBDeviceIds = config.getUSBInterfaceIds();
 
         // FIXME: relocate to app-wide setup
         UIManager.put("OptionPane.maximumSize", new Dimension(500, 500));
@@ -136,7 +138,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
             checkBoxes.clear();
             removeAll();
 
-            for (USBDevice configuredDeviceId : config.getUSBInterfaceIds()) {
+            for (USBDevice configuredDeviceId : configuredUSBDeviceIds.getAllPresent()) {
                 knownDeviceIds.add(configuredDeviceId);
                 approvedDeviceIds.add(configuredDeviceId);
             }
