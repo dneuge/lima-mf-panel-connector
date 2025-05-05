@@ -182,7 +182,7 @@ public class Main {
         config.getUSBInterfaceIds()
               .getAllPresent()
               .stream()
-              .map(USBDevice::getSerialId)
+              .map(USBDeviceId::getSerialId)
               .map(x -> x.orElseThrow(() -> new IllegalArgumentException("approved devices are required to have a serial ID")))
               .forEach(enabledSerialIds::add);
         if (enabledSerialIds.isEmpty()) {
@@ -250,7 +250,7 @@ public class Main {
 
         try {
             for (USBDevice usbDevice : usbDevices) {
-                String serialId = usbDevice.getSerialId().orElse(null);
+                String serialId = usbDevice.getId().getSerialId().orElse(null);
                 if (serialId == null) {
                     LOGGER.warn("Ignoring USB device without serial: {}", usbDevice);
                     continue;

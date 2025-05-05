@@ -82,15 +82,16 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
             return Optional.empty();
         }
 
-        USBDevice description = new USBDevice();
+        USBDeviceId id = new USBDeviceId()
+            .setVendorId(vendorId)
+            .setProductId(productId);
+
+        applyIfPresent(properties, "ID_SERIAL", id::setSerialId);
+
+        USBDevice description = new USBDevice(id);
         description.setDeviceNode(deviceNode);
 
-        description.setVendorId(vendorId);
-        description.setProductId(productId);
-
         udevInfo.getKernelDeviceNodeName().ifPresent(description::setName);
-
-        applyIfPresent(properties, "ID_SERIAL", description::setSerialId);
 
         return Optional.of(description);
     }

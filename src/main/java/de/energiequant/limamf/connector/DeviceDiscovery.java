@@ -42,12 +42,16 @@ public abstract class DeviceDiscovery {
     }
 
     public boolean isKnownUSBProduct(USBDevice device) {
-        int vendorId = device.getVendorId().orElse(-1);
+        return isKnownUSBProduct(device.getId());
+    }
+
+    public boolean isKnownUSBProduct(USBDeviceId id) {
+        int vendorId = id.getVendorId().orElse(-1);
         if (vendorId < 0) {
             return false;
         }
 
-        int productId = device.getProductId().orElse(-1);
+        int productId = id.getProductId().orElse(-1);
         if (productId < 0) {
             return false;
         }

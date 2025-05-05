@@ -7,12 +7,10 @@ import java.util.Optional;
 public class USBDevice {
     private File deviceNode;
     private String name;
-    private int vendorId = -1;
-    private int productId = -1;
-    private String serialId;
+    private final USBDeviceId id;
 
-    public USBDevice() {
-        // nothing to do
+    public USBDevice(USBDeviceId id) {
+        this.id = id;
     }
 
     public Optional<File> getDeviceNode() {
@@ -33,57 +31,8 @@ public class USBDevice {
         return this;
     }
 
-    public Optional<Integer> getVendorId() {
-        if (vendorId < 0) {
-            return Optional.empty();
-        }
-
-        return Optional.of(vendorId);
-    }
-
-    public USBDevice setVendorId(String vendorId) {
-        return setVendorId(Integer.parseUnsignedInt(vendorId, 16));
-    }
-
-    public USBDevice setVendorId(int vendorId) {
-        this.vendorId = vendorId;
-        return this;
-    }
-
-    public Optional<Integer> getProductId() {
-        if (productId < 0) {
-            return Optional.empty();
-        }
-
-        return Optional.of(productId);
-    }
-
-    public USBDevice setProductId(String productId) {
-        return setProductId(Integer.parseUnsignedInt(productId, 16));
-    }
-
-    public USBDevice setProductId(int productId) {
-        this.productId = productId;
-        return this;
-    }
-
-    public Optional<String> getSerialId() {
-        return Optional.ofNullable(serialId);
-    }
-
-    public USBDevice setSerialId(String serialId) {
-        this.serialId = serialId;
-        return this;
-    }
-
-    public USBDevice copyOnlyIDs() {
-        USBDevice copy = new USBDevice();
-
-        copy.vendorId = this.vendorId;
-        copy.productId = this.productId;
-        copy.serialId = this.serialId;
-
-        return copy;
+    public USBDeviceId getId() {
+        return id;
     }
 
     @Override
@@ -107,38 +56,10 @@ public class USBDevice {
             sb.append("name=\"");
             sb.append(name);
             sb.append("\"");
-            isFirst = false;
         }
 
-        if (vendorId >= 0) {
-            if (!isFirst) {
-                sb.append(", ");
-            }
-
-            sb.append("vendorId=0x");
-            sb.append(String.format("%04X", vendorId));
-            isFirst = false;
-        }
-
-        if (productId >= 0) {
-            if (!isFirst) {
-                sb.append(", ");
-            }
-
-            sb.append("productId=0x");
-            sb.append(String.format("%04X", productId));
-            isFirst = false;
-        }
-
-        if (serialId != null) {
-            if (!isFirst) {
-                sb.append(", ");
-            }
-
-            sb.append("serialId=\"");
-            sb.append(serialId);
-            sb.append("\"");
-        }
+        sb.append(", ");
+        sb.append(id);
 
         sb.append(")");
 
@@ -153,15 +74,13 @@ public class USBDevice {
 
         USBDevice other = (USBDevice) obj;
 
-        return this.vendorId == other.vendorId
-            && this.productId == other.productId
-            && Objects.equals(this.deviceNode, other.deviceNode)
-            && Objects.equals(this.serialId, other.serialId)
+        return Objects.equals(this.deviceNode, other.deviceNode)
+            && Objects.equals(this.id, other.id)
             && Objects.equals(this.name, other.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vendorId, productId, serialId, deviceNode, name);
+        return Objects.hash(id, deviceNode, name);
     }
 }
