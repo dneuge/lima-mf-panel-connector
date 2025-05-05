@@ -58,21 +58,48 @@ public class ModuleId {
         private String serial;
 
         public Builder setType(String type) {
+            if (type.trim().isEmpty()) {
+                throw new IllegalArgumentException("type must not be blank");
+            }
+
             this.type = type;
+
             return this;
         }
 
         public Builder setName(String name) {
+            if (name.trim().isEmpty()) {
+                throw new IllegalArgumentException("name must not be blank");
+            }
+
             this.name = name;
+
             return this;
         }
 
         public Builder setSerial(String serial) {
+            if (serial.trim().isEmpty()) {
+                throw new IllegalArgumentException("serial must not be blank");
+            }
+
             this.serial = serial;
+
             return this;
         }
 
         public ModuleId build() {
+            if (type == null) {
+                throw new IllegalArgumentException("missing type");
+            }
+
+            if (name == null) {
+                throw new IllegalArgumentException("missing name");
+            }
+
+            if (serial == null) {
+                throw new IllegalArgumentException("missing serial");
+            }
+
             return new ModuleId(type, name, serial);
         }
     }
