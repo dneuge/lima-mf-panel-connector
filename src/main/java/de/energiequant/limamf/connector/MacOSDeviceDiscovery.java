@@ -129,8 +129,8 @@ public class MacOSDeviceDiscovery extends DeviceDiscovery {
                     USBDevice description = new USBDevice(
                         new USBDeviceId()
                             .setVendorId(vendorId)
-                            .setProductId(productId)
-                            .setSerialId(serialId)
+                            .setProduct(productId)
+                            .setSerial(serialId)
                     );
                     description.setDeviceNode(deviceNode);
 

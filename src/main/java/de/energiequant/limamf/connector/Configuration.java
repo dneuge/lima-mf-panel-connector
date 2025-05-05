@@ -109,8 +109,8 @@ public class Configuration {
     public USBDeviceId parseUSBInterface(Properties properties, String prefix) {
         return new USBDeviceId()
             .setVendorId(Integer.parseUnsignedInt(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_VENDOR), 16))
-            .setProductId(Integer.parseUnsignedInt(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT), 16))
-            .setSerialId(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_SERIAL));
+            .setProduct(Integer.parseUnsignedInt(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT), 16))
+            .setSerial(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_SERIAL));
     }
 
     private static Stream<String> streamKeys(Properties properties) {

@@ -83,10 +83,10 @@ public class LinuxDeviceDiscovery extends DeviceDiscovery {
         }
 
         USBDeviceId id = new USBDeviceId()
-            .setVendorId(vendorId)
-            .setProductId(productId);
+            .setVendor(vendorId)
+            .setProduct(productId);
 
-        applyIfPresent(properties, "ID_SERIAL", id::setSerialId);
+        applyIfPresent(properties, "ID_SERIAL", id::setSerial);
 
         USBDevice description = new USBDevice(id);
         description.setDeviceNode(deviceNode);
