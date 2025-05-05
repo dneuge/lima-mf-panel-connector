@@ -107,10 +107,11 @@ public class Configuration {
     }
 
     public USBDeviceId parseUSBInterface(Properties properties, String prefix) {
-        return new USBDeviceId()
-            .setVendorId(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_VENDOR))
-            .setProduct(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT))
-            .setSerial(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_SERIAL));
+        return USBDeviceId.builder()
+                          .setVendor(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_VENDOR))
+                          .setProduct(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT))
+                          .setSerial(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_SERIAL))
+                          .build();
     }
 
     private static Stream<String> streamKeys(Properties properties) {

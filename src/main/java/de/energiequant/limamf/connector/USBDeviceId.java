@@ -4,9 +4,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class USBDeviceId {
-    private int vendor = -1;
-    private int product = -1;
-    private String serial;
+    private final int vendor;
+    private final int product;
+    private final String serial;
+
+    private USBDeviceId(int vendor, int product, String serial) {
+        this.vendor = vendor;
+        this.product = product;
+        this.serial = serial;
+    }
 
     public Optional<Integer> getVendor() {
         if (vendor < 0) {
@@ -14,15 +20,6 @@ public class USBDeviceId {
         }
 
         return Optional.of(vendor);
-    }
-
-    public USBDeviceId setVendor(String vendor) {
-        return setVendorId(Integer.parseUnsignedInt(vendor, 16));
-    }
-
-    public USBDeviceId setVendorId(int vendorId) {
-        this.vendor = vendorId;
-        return this;
     }
 
     public Optional<Integer> getProduct() {
@@ -33,22 +30,8 @@ public class USBDeviceId {
         return Optional.of(product);
     }
 
-    public USBDeviceId setProduct(String product) {
-        return setProduct(Integer.parseUnsignedInt(product, 16));
-    }
-
-    public USBDeviceId setProduct(int productId) {
-        this.product = productId;
-        return this;
-    }
-
     public Optional<String> getSerial() {
         return Optional.ofNullable(serial);
-    }
-
-    public USBDeviceId setSerial(String serial) {
-        this.serial = serial;
-        return this;
     }
 
     @Override
@@ -86,5 +69,42 @@ public class USBDeviceId {
     @Override
     public int hashCode() {
         return Objects.hash(vendor, product, serial);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private int vendor = -1;
+        private int product = -1;
+        private String serial;
+
+        public Builder setVendor(String vendor) {
+            return setVendor(Integer.parseUnsignedInt(vendor, 16));
+        }
+
+        public Builder setVendor(int vendorId) {
+            this.vendor = vendorId;
+            return this;
+        }
+
+        public Builder setProduct(String product) {
+            return setProduct(Integer.parseUnsignedInt(product, 16));
+        }
+
+        public Builder setProduct(int productId) {
+            this.product = productId;
+            return this;
+        }
+
+        public Builder setSerial(String serial) {
+            this.serial = serial;
+            return this;
+        }
+
+        public USBDeviceId build() {
+            return new USBDeviceId(vendor, product, serial);
+        }
     }
 }
