@@ -98,4 +98,10 @@ public class ObservableCollectionProxy<T, C extends Collection<T>> {
         }
         return out;
     }
+
+    public boolean contains(T obj) {
+        synchronized (this) {
+            return present.contains(obj);
+        }
+    }
 }
