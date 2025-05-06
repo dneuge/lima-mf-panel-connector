@@ -32,6 +32,7 @@ public class Configuration {
     private static final String PROPERTY_MODULE_TYPE = "type";
     private static final String PROPERTY_MODULE_NAME = "name";
     private static final String PROPERTY_MODULE_DEVICE_SERIAL = "serial";
+    private static final String PROPERTY_MODULE_PANEL_FACTORY_ID = "panelFactoryId";
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG = "mcc";
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL = "mccSerial";
 
@@ -41,6 +42,7 @@ public class Configuration {
 
     public static class Module {
         private final ModuleId id;
+        private final String panelFactoryId;
         private final File connectorConfig;
         private final String connectorConfigSerial;
 
@@ -50,12 +52,17 @@ public class Configuration {
                               .setName(getMandatoryString(properties, prefix + PROPERTY_MODULE_NAME))
                               .setSerial(getMandatoryString(properties, prefix + PROPERTY_MODULE_DEVICE_SERIAL))
                               .build();
+            this.panelFactoryId = getMandatoryString(properties, prefix + PROPERTY_MODULE_PANEL_FACTORY_ID);
             this.connectorConfig = new File(getMandatoryString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG));
             this.connectorConfigSerial = getOptionalString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL).orElse(null);
         }
 
         public ModuleId getId() {
             return id;
+        }
+
+        public String getPanelFactoryId() {
+            return panelFactoryId;
         }
 
         public File getConnectorConfig() {
@@ -75,13 +82,14 @@ public class Configuration {
             Module other = (Module) obj;
 
             return Objects.equals(this.id, other.id)
+                && Objects.equals(this.panelFactoryId, other.panelFactoryId)
                 && Objects.equals(this.connectorConfigSerial, other.connectorConfigSerial)
                 && Objects.equals(this.connectorConfig, other.connectorConfig);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id, connectorConfig, connectorConfigSerial);
+            return Objects.hash(id, panelFactoryId, connectorConfig, connectorConfigSerial);
         }
 
         @Override
@@ -90,7 +98,10 @@ public class Configuration {
 
             sb.append(id);
 
-            sb.append(", ");
+            sb.append(", \"");
+            sb.append(panelFactoryId);
+
+            sb.append("\", ");
             if (connectorConfigSerial != null) {
                 sb.append("\"");
                 sb.append(connectorConfigSerial);
