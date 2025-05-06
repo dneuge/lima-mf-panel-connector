@@ -222,7 +222,7 @@ public class Main {
         panelEventProxy.attachListener(simulatorClient.getPanelEventListener());
 
         connectorConfiguration = ConnectorConfiguration.fromXML(moduleConfig.getConnectorConfig());
-        Set<String> serials = getSerials(connectorConfiguration);
+        Set<String> serials = connectorConfiguration.getSerials();
         LOGGER.debug("Serials in connector configuration: {}", serials);
         if (serials.size() != 1) {
             // TODO: map config serial to device serial; auto-select if unambiguous
@@ -320,25 +320,6 @@ public class Main {
                 panel.disconnect();
             } catch (Exception ex) {
                 LOGGER.warn("failed to disconnect panel {}", panel);
-            }
-        }
-    }
-
-    private Set<String> getSerials(ConnectorConfiguration config) {
-        Set<String> out = new HashSet<>();
-        collectSerials(out, config.getItems());
-        return out;
-    }
-
-    private void collectSerials(Collection<String> collector, Collection<?> objects) {
-        for (Object obj : objects) {
-            if (obj instanceof ModuleBindable) {
-                ((ModuleBindable) obj).getSerial()
-                                      .ifPresent(collector::add);
-            }
-
-            if (obj instanceof ConfigNode) {
-                collectSerials(collector, ((ConfigNode) obj).getChildren());
             }
         }
     }
