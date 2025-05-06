@@ -32,6 +32,7 @@ import javax.swing.UIManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.energiequant.apputils.misc.gui.SwingHelper;
 import de.energiequant.limamf.compat.protocol.IdentificationInfoMessage;
 import de.energiequant.limamf.connector.Configuration;
 import de.energiequant.limamf.connector.DeviceDiscovery;
@@ -72,12 +73,14 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         add(
-            new JLabel(
-                "<html>Hardware using MobiFlight shows up as a generic serial interface. MobiFlight can only be detected by actively sending probe "
-                    + "commands to the device. To prevent inadvertent actions or disruptions, devices need to be manually identified and approved in this "
-                    + "dialog. If you are unsure about a device's identity, you can try plugging it in and out a few times to observe how the entries in "
-                    + "this list change. Enabling a serial interface in this list will actively probe the device to confirm firmware compatibility. Only "
-                    + "devices which have been enabled here and pass probing can be used.</html>"
+            SwingHelper.stylePlain(
+                new JLabel(
+                    "<html>Hardware using MobiFlight shows up as a generic serial interface. MobiFlight can only be detected by actively sending probe "
+                        + "commands to the device. To prevent inadvertent actions or disruptions, devices need to be manually identified and approved in this "
+                        + "dialog. If you are unsure about a device's identity, you can try plugging it in and out a few times to observe how the entries in "
+                        + "this list change. Enabling a serial interface in this list will actively probe the device to confirm firmware compatibility. Only "
+                        + "devices which have been enabled here and pass probing can be used.</html>"
+                )
             ),
             gbc
         );
