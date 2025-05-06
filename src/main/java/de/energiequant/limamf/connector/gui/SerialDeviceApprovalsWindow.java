@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -63,6 +64,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
+        gbc.gridwidth = 3;
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -90,6 +92,36 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         gbc.weightx = 0.0;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.NONE;
+
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        gbc.gridx = 0;
+        gbc.gridy++;
+        add(new JPanel(), gbc);
+        gbc.weightx = 0.0;
+        gbc.fill = GridBagConstraints.NONE;
+
+        gbc.gridx++;
+        JButton btnApply = new JButton("Apply & Close");
+        btnApply.addActionListener(this::onApplyCloseClicked);
+        add(btnApply, gbc);
+
+        gbc.gridx++;
+        JButton btnCancel = new JButton("Cancel");
+        btnCancel.addActionListener(this::onCancelClicked);
+        add(btnCancel, gbc);
+
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+    }
+
+    private void onApplyCloseClicked(ActionEvent e) {
+        applyChanges();
+        close();
+    }
+
+    private void onCancelClicked(ActionEvent e) {
+        close();
     }
 
     @Override
@@ -98,10 +130,53 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         if ((eventId == WindowEvent.WINDOW_OPENED) || (windowClosed && (eventId == WindowEvent.WINDOW_ACTIVATED))) {
             onWindowOpened();
         } else if (eventId == WindowEvent.WINDOW_CLOSING) {
-            onWindowClosing();
+            if (hasChanges()) {
+                int res = JOptionPane.showConfirmDialog(this, "Do you want to apply the changed device approval(s)?", "Pending Changes", JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.YES_OPTION) {
+                    applyChanges();
+                } else if (res != JOptionPane.NO_OPTION) {
+                    // cancel
+                    return;
+                }
+            }
+
+            close();
         }
 
         super.processWindowEvent(e);
+    }
+
+    private boolean hasChanges() {
+        return !deviceListPanel.getApprovedDeviceIds().equals(configuredUSBDeviceIds.getAllPresent());
+    }
+
+    private void applyChanges() {
+        Set<USBDeviceId> previous = new HashSet<>(configuredUSBDeviceIds.getAllPresent());
+        Set<USBDeviceId> wanted = deviceListPanel.getApprovedDeviceIds();
+
+        Set<USBDeviceId> removed = new HashSet<>(previous);
+        removed.removeAll(wanted);
+
+        Set<USBDeviceId> added = new HashSet<>(wanted);
+        added.removeAll(previous);
+
+        if (removed.isEmpty() && added.isEmpty()) {
+            LOGGER.debug("no changes to be applied");
+            return;
+        }
+
+        LOGGER.debug("removing: {}", removed);
+        LOGGER.debug("adding: {}", added);
+
+        removed.forEach(configuredUSBDeviceIds::remove);
+        added.forEach(configuredUSBDeviceIds::add);
+
+        LOGGER.debug("changes have been applied");
+    }
+
+    private void close() {
+        onWindowClosing();
+        setVisible(false);
     }
 
     private void onWindowOpened() {
@@ -115,8 +190,6 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         LOGGER.debug("window closing");
         windowClosed = true;
         connectedUSBDevices.detach(deviceListPanel);
-
-        // TODO: save to Configuration
         deviceListPanel.clear();
     }
 
@@ -129,6 +202,12 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         private DeviceListPanel() {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             setBackground(Color.WHITE);
+        }
+
+        public Set<USBDeviceId> getApprovedDeviceIds() {
+            synchronized (this) {
+                return new HashSet<>(approvedDeviceIds);
+            }
         }
 
         private void clear() {
@@ -312,7 +391,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 }
 
                 synchronized (this) {
-                    LOGGER.info("Serial device approved: {} => {}", device, identification);
+                    LOGGER.info("Probe succeeded: {} => {}", device, identification);
                     approvedDeviceIds.add(device.getId());
                 }
 
