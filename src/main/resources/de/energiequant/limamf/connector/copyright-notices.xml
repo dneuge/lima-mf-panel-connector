@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <copyrightNotices>
+    <notice groupId="com.github.cliftonlabs" artifactId="json-simple" version="4.0.1">
+        <!-- This is based on the Apache License file, release date and the homepage of
+             json-simple as there is no NOTICE file or similar. -->
+
+        Copyright 2016-2022 Clifton Labs
+
+        Davin Loegering designed and developed the 2.*, 3.*, 4.* versions.
+        Fang Yidong architected and developed the 1.* versions.
+        Chris Nokleberg contributed to the 1.* versions.
+        Dave Hughes contributed to the 1.* versions.
+        Chris (cbojar on github) provided fixes released in the 3.0.2 version.
+        Barry Lagerweij for the convenience put methods introduced in the 3.1.1 version.
+    </notice>
     <notice groupId="com.google.auto.service" artifactId="auto-service-annotations" version="1.1.1">
         <!-- this is compile-time dependency but attribution.xml does not indicate the scope - exclude? -->
         Copyright 2013 Google LLC
