@@ -87,7 +87,7 @@ public class DCPCCPPanel implements Panel {
     private static final Source MANUAL_BRIGHTNESS_ENCODER = Source.CCP5_ROTARY_RADIO;
     private static final int MANUAL_BRIGHTNESS_STEP_SIZE = 5;
 
-    private static final Map<String, Source> SOURCES_BY_BASE_NAME = Maps.createUnmodifiableHashMap(
+    private static final Map<String, Source> SOURCES_BY_BASE_NAME = Maps.<String, Source>createUnmodifiableHashMap(
         Maps.entry("DCP_MENU", Source.DCP1_MENU),
         Maps.entry("DCP_NAV_SRC", Source.DCP1_NAV_SRC),
         Maps.entry("DCP_FRMT", Source.DCP1_FRMT),
