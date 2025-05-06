@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -62,6 +63,43 @@ public class Configuration {
 
         public Optional<String> getConnectorConfigSerial() {
             return Optional.ofNullable(connectorConfigSerial);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Module)) {
+                return false;
+            }
+
+            Module other = (Module) obj;
+
+            return Objects.equals(this.id, other.id)
+                && Objects.equals(this.connectorConfigSerial, other.connectorConfigSerial)
+                && Objects.equals(this.connectorConfig, other.connectorConfig);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, connectorConfig, connectorConfigSerial);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("Module(");
+
+            sb.append(id);
+
+            sb.append(", ");
+            if (connectorConfigSerial != null) {
+                sb.append("\"");
+                sb.append(connectorConfigSerial);
+                sb.append("\"@");
+            }
+            sb.append(connectorConfig);
+
+            sb.append(")");
+
+            return sb.toString();
         }
     }
 
