@@ -1,5 +1,6 @@
 package de.energiequant.limamf.connector.gui;
 
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -127,6 +128,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
         private DeviceListPanel() {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setBackground(Color.WHITE);
         }
 
         private void clear() {
@@ -180,6 +182,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
             for (USBDeviceId id : knownDeviceIds) {
                 while (i >= checkBoxes.size()) {
                     JCheckBox tmp = new JCheckBox();
+                    tmp.setBackground(Color.WHITE);
                     final int deviceIndex = checkBoxes.size();
                     tmp.addActionListener(event -> onCheckBoxChange(deviceIndex, event));
                     add(tmp);
