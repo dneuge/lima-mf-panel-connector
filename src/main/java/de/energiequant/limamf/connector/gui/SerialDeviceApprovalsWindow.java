@@ -1,5 +1,7 @@
 package de.energiequant.limamf.connector.gui;
 
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
+
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -307,7 +309,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
                     // TODO: mark devices usually associated with MobiFlight
 
-                    checkBox.setText(sb.toString());
+                    checkBox.setText(escapeHtml4(sb.toString()));
 
                     i++;
                 }
