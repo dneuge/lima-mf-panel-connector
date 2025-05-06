@@ -132,120 +132,130 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         }
 
         private void clear() {
-            LOGGER.debug("clearing device list");
-            knownDeviceIds.clear();
-            approvedDeviceIds.clear();
-            connectedDevicesById.clear();
-            checkBoxes.clear();
-            removeAll();
+            synchronized (this) {
+                LOGGER.debug("clearing device list");
+                knownDeviceIds.clear();
+                approvedDeviceIds.clear();
+                connectedDevicesById.clear();
+                checkBoxes.clear();
+                removeAll();
 
-            for (USBDeviceId configuredDeviceId : configuredUSBDeviceIds.getAllPresent()) {
-                knownDeviceIds.add(configuredDeviceId);
-                approvedDeviceIds.add(configuredDeviceId);
-            }
+                for (USBDeviceId configuredDeviceId : configuredUSBDeviceIds.getAllPresent()) {
+                    knownDeviceIds.add(configuredDeviceId);
+                    approvedDeviceIds.add(configuredDeviceId);
+                }
 
-            updateUIList();
+                updateUIList();
 
-            if (checkBoxes.isEmpty()) {
-                add(new JLabel("No devices have been found yet; check if your module is connected."));
+                if (checkBoxes.isEmpty()) {
+                    add(new JLabel("No devices have been found yet; check if your module is connected."));
+                }
             }
         }
 
         @Override
         public void onAdded(USBDevice obj) {
-            USBDeviceId id = obj.getId();
-            if (!id.getSerial().isPresent()) {
-                LOGGER.debug("missing serial ID, ignoring: {}", obj);
-                return;
-            }
+            synchronized (this) {
+                USBDeviceId id = obj.getId();
+                if (!id.getSerial().isPresent()) {
+                    LOGGER.debug("missing serial ID, ignoring: {}", obj);
+                    return;
+                }
 
-            LOGGER.debug("recording known device (monitor): {}", obj);
-            knownDeviceIds.add(id);
-            USBDevice previous = connectedDevicesById.put(id, obj);
-            if (previous != null) {
-                connectedDevicesById.remove(id);
-                throw new IllegalArgumentException("Device with same ID seen twice; sharing the same ID currently is not supported: " + previous + ", " + obj);
+                LOGGER.debug("recording known device (monitor): {}", obj);
+                knownDeviceIds.add(id);
+                USBDevice previous = connectedDevicesById.put(id, obj);
+                if (previous != null) {
+                    connectedDevicesById.remove(id);
+                    throw new IllegalArgumentException("Device with same ID seen twice; sharing the same ID currently is not supported: " + previous + ", " + obj);
+                }
+                updateUIList();
             }
-            updateUIList();
         }
 
         @Override
         public void onRemoved(USBDevice obj) {
-            LOGGER.debug("recording disconnected device (monitor): {}", obj);
-            connectedDevicesById.remove(obj.getId());
-            updateUIList();
+            synchronized (this) {
+                LOGGER.debug("recording disconnected device (monitor): {}", obj);
+                connectedDevicesById.remove(obj.getId());
+                updateUIList();
+            }
         }
 
         private void updateUIList() {
-            LOGGER.debug(
-                "updating UI; {} known, {} connected, already have {} checkboxes",
-                knownDeviceIds.size(), connectedDevicesById.size(), checkBoxes.size()
-            );
+            synchronized (this) {
+                LOGGER.debug(
+                    "updating UI; {} known, {} connected, already have {} checkboxes",
+                    knownDeviceIds.size(), connectedDevicesById.size(), checkBoxes.size()
+                );
 
-            // remove placeholder text before adding first device
-            if (checkBoxes.isEmpty() && !knownDeviceIds.isEmpty()) {
-                removeAll();
-            }
-
-            int i = 0;
-            for (USBDeviceId id : knownDeviceIds) {
-                while (i >= checkBoxes.size()) {
-                    JCheckBox tmp = new JCheckBox();
-                    tmp.setBackground(Color.WHITE);
-                    final int deviceIndex = checkBoxes.size();
-                    tmp.addActionListener(event -> onCheckBoxChange(deviceIndex, event));
-                    add(tmp);
-                    checkBoxes.add(tmp);
+                // remove placeholder text before adding first device
+                if (checkBoxes.isEmpty() && !knownDeviceIds.isEmpty()) {
+                    removeAll();
                 }
 
-                JCheckBox checkBox = checkBoxes.get(i);
+                int i = 0;
+                for (USBDeviceId id : knownDeviceIds) {
+                    while (i >= checkBoxes.size()) {
+                        JCheckBox tmp = new JCheckBox();
+                        tmp.setBackground(Color.WHITE);
+                        final int deviceIndex = checkBoxes.size();
+                        tmp.addActionListener(event -> onCheckBoxChange(deviceIndex, event));
+                        add(tmp);
+                        checkBoxes.add(tmp);
+                    }
 
-                StringBuilder sb = new StringBuilder();
+                    JCheckBox checkBox = checkBoxes.get(i);
 
-                sb.append(String.format("%04X %04X ", id.getVendor(), id.getProduct()));
+                    StringBuilder sb = new StringBuilder();
 
-                String deviceSerial = id.getSerial().orElseThrow(() -> new IllegalArgumentException("missing serial ID: " + id));
-                sb.append(deviceSerial);
-                sb.append(" ");
+                    sb.append(String.format("%04X %04X ", id.getVendor(), id.getProduct()));
 
-                boolean isApproved = approvedDeviceIds.contains(id);
-                checkBox.setSelected(isApproved);
+                    String deviceSerial = id.getSerial().orElseThrow(() -> new IllegalArgumentException("missing serial ID: " + id));
+                    sb.append(deviceSerial);
+                    sb.append(" ");
 
-                if (connectedDevicesById.containsKey(id)) {
-                    sb.append("[connected]");
-                    checkBox.setEnabled(true);
-                } else {
-                    sb.append("[not found]");
-                    checkBox.setEnabled(isApproved);
+                    boolean isApproved = approvedDeviceIds.contains(id);
+                    checkBox.setSelected(isApproved);
+
+                    if (connectedDevicesById.containsKey(id)) {
+                        sb.append("[connected]");
+                        checkBox.setEnabled(true);
+                    } else {
+                        sb.append("[not found]");
+                        checkBox.setEnabled(isApproved);
+                    }
+
+                    // TODO: mark devices usually associated with MobiFlight
+
+                    checkBox.setText(sb.toString());
+
+                    i++;
                 }
 
-                // TODO: mark devices usually associated with MobiFlight
-
-                checkBox.setText(sb.toString());
-
-                i++;
+                // removal & invalidating the panel is insufficient
+                // - revalidate must be called to actually get the components removed
+                // - repaint is needed even if the window gets closed/reopened, otherwise remains of previous components will still get drawn
+                revalidate();
+                repaint();
             }
-
-            // removal & invalidating the panel is insufficient
-            // - revalidate must be called to actually get the components removed
-            // - repaint is needed even if the window gets closed/reopened, otherwise remains of previous components will still get drawn
-            revalidate();
-            repaint();
         }
 
         private void onCheckBoxChange(int index, ActionEvent event) {
             boolean selected = ((JCheckBox) event.getSource()).isSelected();
 
-            Iterator<USBDeviceId> it = knownDeviceIds.iterator();
             USBDeviceId deviceId = null;
-            int i = 0;
-            while (it.hasNext()) {
-                USBDeviceId tmp = it.next();
-                if (i == index) {
-                    deviceId = tmp;
-                    break;
+            synchronized (this) {
+                Iterator<USBDeviceId> it = knownDeviceIds.iterator();
+                int i = 0;
+                while (it.hasNext()) {
+                    USBDeviceId tmp = it.next();
+                    if (i == index) {
+                        deviceId = tmp;
+                        break;
+                    }
+                    i++;
                 }
-                i++;
             }
 
             if (deviceId == null) {
@@ -253,10 +263,15 @@ public class SerialDeviceApprovalsWindow extends JDialog {
             }
 
             if (!selected) {
-                LOGGER.info("Revoked serial device approval: {}", deviceId);
-                approvedDeviceIds.remove(deviceId);
+                synchronized (this) {
+                    LOGGER.info("Revoked serial device approval: {}", deviceId);
+                    approvedDeviceIds.remove(deviceId);
+                }
             } else {
-                USBDevice device = connectedDevicesById.get(deviceId);
+                USBDevice device;
+                synchronized (this) {
+                    device = connectedDevicesById.get(deviceId);
+                }
                 if (device == null) {
                     LOGGER.debug("prevented selection of unconnected device {}", deviceId);
                     updateUIList(); // update UI to reset checkbox state
@@ -296,8 +311,10 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                     return;
                 }
 
-                LOGGER.info("Serial device approved: {} => {}", device, identification);
-                approvedDeviceIds.add(device.getId());
+                synchronized (this) {
+                    LOGGER.info("Serial device approved: {} => {}", device, identification);
+                    approvedDeviceIds.add(device.getId());
+                }
 
                 JOptionPane.showMessageDialog(this, "Serial device " + deviceNode.getAbsolutePath() + " has successfully been probed.", "Probe successful", JOptionPane.INFORMATION_MESSAGE);
             }
