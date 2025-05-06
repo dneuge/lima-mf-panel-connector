@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.auto.service.AutoService;
+
 import de.energiequant.limamf.compat.config.connector.ConfigItem;
 import de.energiequant.limamf.compat.config.connector.ConnectorConfiguration;
 import de.energiequant.limamf.compat.config.connector.Display;
@@ -45,6 +47,7 @@ import de.energiequant.limamf.compat.protocol.SetPinMessage;
 import de.energiequant.limamf.compat.utils.Maps;
 import de.energiequant.limamf.compat.utils.Numbers;
 import de.energiequant.limamf.connector.DeviceCommunicator;
+import de.energiequant.limamf.connector.ModuleDiscovery;
 import de.energiequant.limamf.connector.USBDevice;
 import de.energiequant.limamf.connector.simulator.SimulatorEventListener;
 
@@ -1055,6 +1058,30 @@ public class DCPCCPPanel implements Panel {
             if (useSimulatorBrightness) {
                 brightness = simulatorBrightness;
                 submitBrightness();
+            }
+        }
+    }
+
+    @AutoService(Panel.Factory.class)
+    public static class Factory implements Panel.Factory {
+        @Override
+        public String getId() {
+            return "limamf.AvioniqueSimulationCL650DCPCCP";
+        }
+
+        @Override
+        public String getName() {
+            return "Avionique Simulation CL650 DCP/CCP";
+        }
+
+        @Override
+        public Panel create(PanelEventListener eventListener, ModuleDiscovery.ConnectedModule module, ConnectorConfiguration connectorConfiguration, String connectorConfigurationSerial) {
+            try {
+                return tryConnect(eventListener, module.getUSBDevice(), connectorConfiguration).orElseThrow(() -> new IllegalArgumentException("unable to instantiate"));
+            } catch (InterruptedException ex) {
+                LOGGER.error("interrupted while trying to connect {}", module, ex);
+                System.exit(1);
+                throw new RuntimeException(ex);
             }
         }
     }
