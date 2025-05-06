@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -36,7 +37,7 @@ public class Configuration {
 
     private String acceptedDisclaimer;
     private final ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> usbInterfaceIds = new ObservableCollectionProxy<>(HashSet::new);
-    private final Collection<Module> modules = new ArrayList<>();
+    private final Map<ModuleId, Module> modulesById = new HashMap<>();
 
     public static class Module {
         private final ModuleId id;
@@ -121,7 +122,29 @@ public class Configuration {
                               .map(x -> x.substring(0, x.indexOf(".", PROPERTY_MODULES_PREFIX.length()) + 1))
                               .distinct()
                               .map(x -> new Module(properties, x))
-                              .forEach(modules::add);
+                              .forEach(this::putModule);
+    }
+
+    public Optional<Module> getModule(ModuleId id) {
+        return Optional.ofNullable(modulesById.get(id));
+    }
+
+    public void putModule(Module module) {
+        Module previous = modulesById.put(module.getId(), module);
+        if (previous == null) {
+            LOGGER.debug("Added module configuration: {}", module);
+        } else {
+            LOGGER.debug("Replaced module configuration: {} => {}", previous, module);
+        }
+    }
+
+    public void removeModule(ModuleId id) {
+        Module previous = modulesById.remove(id);
+        if (previous == null) {
+            LOGGER.debug("Tried to remove unconfigured module: {}", id);
+        } else {
+            LOGGER.debug("Removed module configuration: {}", previous);
+        }
     }
 
     public Optional<String> getAcceptedDisclaimer() {
@@ -129,7 +152,7 @@ public class Configuration {
     }
 
     public Collection<Module> getModules() {
-        return new ArrayList<>(modules);
+        return new ArrayList<>(modulesById.values());
     }
 
     public ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> getUSBInterfaceIds() {
