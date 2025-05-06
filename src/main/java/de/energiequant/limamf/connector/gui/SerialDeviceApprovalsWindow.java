@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
 
 import de.energiequant.limamf.compat.protocol.IdentificationInfoMessage;
 import de.energiequant.limamf.connector.Configuration;
-import de.energiequant.limamf.connector.DeviceCommunicator;
 import de.energiequant.limamf.connector.DeviceDiscovery;
+import de.energiequant.limamf.connector.ModuleDiscovery;
 import de.energiequant.limamf.connector.ObservableCollectionProxy;
 import de.energiequant.limamf.connector.USBDevice;
 import de.energiequant.limamf.connector.USBDeviceId;
@@ -270,14 +270,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 SerialDeviceApprovalsWindow.this.repaint(); // workaround for blocking UI thread; only works sometimes, needs decoupling
 
                 LOGGER.info("Probing for approval: {}", device);
-                IdentificationInfoMessage identification;
-                try {
-                    identification = DeviceCommunicator.probe(deviceNode).orElse(null);
-                } catch (InterruptedException ex) {
-                    LOGGER.error("interrupted while probing, exiting", ex);
-                    System.exit(1);
-                    return;
-                }
+                IdentificationInfoMessage identification = ModuleDiscovery.probe(deviceNode).orElse(null);
 
                 SerialDeviceApprovalsWindow.this.setCursor(Cursor.getDefaultCursor());
 
