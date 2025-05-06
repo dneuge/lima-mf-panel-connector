@@ -93,8 +93,6 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
     @Override
     protected void processWindowEvent(WindowEvent e) {
-        LOGGER.debug("window event: {}", e);
-
         int eventId = e.getID();
         if ((eventId == WindowEvent.WINDOW_OPENED) || (windowClosed && (eventId == WindowEvent.WINDOW_ACTIVATED))) {
             onWindowOpened();
