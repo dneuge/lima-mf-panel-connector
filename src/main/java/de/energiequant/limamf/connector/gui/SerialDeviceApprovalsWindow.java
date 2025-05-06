@@ -217,7 +217,11 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 i++;
             }
 
-            invalidate();
+            // removal & invalidating the panel is insufficient
+            // - revalidate must be called to actually get the components removed
+            // - repaint is needed even if the window gets closed/reopened, otherwise remains of previous components will still get drawn
+            revalidate();
+            repaint();
         }
 
         private void onCheckBoxChange(int index, ActionEvent event) {
