@@ -145,6 +145,10 @@ public class SerialDeviceApprovalsWindow extends JDialog {
             }
 
             updateUIList();
+
+            if (checkBoxes.isEmpty()) {
+                add(new JLabel("No devices have been found yet; check if your module is connected."));
+            }
         }
 
         @Override
@@ -177,6 +181,11 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 "updating UI; {} known, {} connected, already have {} checkboxes",
                 knownDeviceIds.size(), connectedDevicesById.size(), checkBoxes.size()
             );
+
+            // remove placeholder text before adding first device
+            if (checkBoxes.isEmpty() && !knownDeviceIds.isEmpty()) {
+                removeAll();
+            }
 
             int i = 0;
             for (USBDeviceId id : knownDeviceIds) {
