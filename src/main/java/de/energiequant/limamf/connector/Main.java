@@ -198,8 +198,6 @@ public class Main {
 
         // TODO: restrict to configured type, name and device serial
 
-        File connectorConfigFile = new File(moduleConfig.getConnectorConfig());
-
         simulatorEventProxy = new SimulatorEventProxy();
         panelEventProxy = new PanelEventProxy();
 
@@ -223,7 +221,7 @@ public class Main {
         }
         panelEventProxy.attachListener(simulatorClient.getPanelEventListener());
 
-        connectorConfiguration = ConnectorConfiguration.fromXML(connectorConfigFile);
+        connectorConfiguration = ConnectorConfiguration.fromXML(moduleConfig.getConnectorConfig());
         Set<String> serials = getSerials(connectorConfiguration);
         LOGGER.debug("Serials in connector configuration: {}", serials);
         if (serials.size() != 1) {

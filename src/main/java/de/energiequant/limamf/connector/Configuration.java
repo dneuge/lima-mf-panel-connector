@@ -39,7 +39,7 @@ public class Configuration {
 
     public static class Module {
         private final ModuleId id;
-        private final String connectorConfig;
+        private final File connectorConfig;
         private final String connectorConfigSerial;
 
         private Module(Properties properties, String prefix) {
@@ -48,7 +48,7 @@ public class Configuration {
                               .setName(getMandatoryString(properties, prefix + PROPERTY_MODULE_NAME))
                               .setSerial(getMandatoryString(properties, prefix + PROPERTY_MODULE_DEVICE_SERIAL))
                               .build();
-            this.connectorConfig = getMandatoryString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG);
+            this.connectorConfig = new File(getMandatoryString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG));
             this.connectorConfigSerial = getOptionalString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL).orElse(null);
         }
 
@@ -56,7 +56,7 @@ public class Configuration {
             return id;
         }
 
-        public String getConnectorConfig() {
+        public File getConnectorConfig() {
             return connectorConfig;
         }
 
