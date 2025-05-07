@@ -102,7 +102,8 @@ public class ConfigurationWindow extends JDialog {
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
         moduleListPanel = new ModuleListPanel();
-        add(new JScrollPane(moduleListPanel), gbc);
+        JScrollPane moduleListScrollPane = new JScrollPane(withBGColor(new TopAlignedPanel(moduleListPanel), Color.WHITE));
+        add(moduleListScrollPane, gbc);
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         gbc.weighty = 0.0;
@@ -663,6 +664,36 @@ public class ConfigurationWindow extends JDialog {
         private void onFileSelected(File file) {
             setFile(file);
             callback.run();
+        }
+    }
+
+    private static class TopAlignedPanel extends JPanel {
+        private final JPanel filler;
+
+        TopAlignedPanel(JComponent topComponent) {
+            setLayout(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.weightx = 1.0;
+            add(topComponent, gbc);
+
+            gbc.gridy++;
+            gbc.fill = GridBagConstraints.BOTH;
+            gbc.weighty = 1.0;
+            filler = new JPanel();
+            filler.setBackground(getBackground());
+            add(filler, gbc);
+        }
+
+        @Override
+        public void setBackground(Color bg) {
+            super.setBackground(bg);
+            if (filler != null) {
+                filler.setBackground(bg);
+            }
         }
     }
 
