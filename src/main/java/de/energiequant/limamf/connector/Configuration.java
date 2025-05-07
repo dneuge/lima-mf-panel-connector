@@ -57,6 +57,13 @@ public class Configuration {
             this.connectorConfigSerial = getOptionalString(properties, prefix + PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL).orElse(null);
         }
 
+        private Module(ModuleId id, String panelFactoryId, File connectorConfig, String connectorConfigSerial) {
+            this.id = id;
+            this.panelFactoryId = panelFactoryId;
+            this.connectorConfig = connectorConfig;
+            this.connectorConfigSerial = connectorConfigSerial;
+        }
+
         public ModuleId getId() {
             return id;
         }
@@ -112,6 +119,53 @@ public class Configuration {
             sb.append(")");
 
             return sb.toString();
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private ModuleId id;
+            private String panelFactoryId;
+            private File connectorConfig;
+            private String connectorConfigSerial;
+
+            public Builder setId(ModuleId id) {
+                this.id = id;
+                return this;
+            }
+
+            public Builder setPanelFactoryId(String panelFactoryId) {
+                this.panelFactoryId = panelFactoryId;
+                return this;
+            }
+
+            public Builder setConnectorConfig(File connectorConfig) {
+                this.connectorConfig = connectorConfig;
+                return this;
+            }
+
+            public Builder setConnectorConfigSerial(String connectorConfigSerial) {
+                this.connectorConfigSerial = connectorConfigSerial;
+                return this;
+            }
+
+            public Module build() {
+                if (id == null) {
+                    throw new IllegalArgumentException("missing module ID");
+                }
+
+                if (panelFactoryId == null) {
+                    throw new IllegalArgumentException("missing panel factory ID");
+                }
+
+                if (connectorConfig == null) {
+                    throw new IllegalArgumentException("missing connector config file");
+                }
+
+                return new Module(id, panelFactoryId, connectorConfig, connectorConfigSerial);
+            }
         }
     }
 
