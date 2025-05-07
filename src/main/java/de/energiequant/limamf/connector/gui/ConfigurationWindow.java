@@ -313,9 +313,9 @@ public class ConfigurationWindow extends JDialog {
             ModulePanel panel = modulePanels.get(id);
             if (panel == null) {
                 LOGGER.warn("no UI panel for {}", id);
+            } else {
+                panel.onDisconnected();
             }
-
-            panel.onDisconnected();
         }
     }
 
