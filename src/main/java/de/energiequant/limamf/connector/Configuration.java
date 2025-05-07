@@ -219,6 +219,20 @@ public class Configuration {
         return new HashSet<>(modulesById.values());
     }
 
+    public void setModules(Collection<Module> modules) {
+        Map<ModuleId, Module> tmp = new HashMap<>();
+
+        for (Module module : modules) {
+            Module previous = tmp.put(module.getId(), module);
+            if (previous != null) {
+                throw new IllegalArgumentException("Duplicate module ID \"" + module.getId() + "\": " + module + ", " + previous);
+            }
+        }
+
+        modulesById.clear();
+        modulesById.putAll(tmp);
+    }
+
     public ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> getUSBInterfaceIds() {
         return usbInterfaceIds;
     }
