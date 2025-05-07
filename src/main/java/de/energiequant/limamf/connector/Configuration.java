@@ -3,7 +3,6 @@ package de.energiequant.limamf.connector;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -216,8 +215,8 @@ public class Configuration {
         return Optional.ofNullable(acceptedDisclaimer);
     }
 
-    public Collection<Module> getModules() {
-        return new ArrayList<>(modulesById.values());
+    public Set<Module> getModules() {
+        return new HashSet<>(modulesById.values());
     }
 
     public ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> getUSBInterfaceIds() {
