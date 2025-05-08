@@ -3,6 +3,7 @@ package de.energiequant.limamf.connector;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -275,6 +276,18 @@ public class Configuration {
     private static Stream<Map.Entry<String, String>> streamEntries(Properties properties) {
         return (Stream) properties.entrySet()
                                   .stream();
+    }
+
+    public static Configuration createFromDefaults() {
+        Properties properties = new Properties();
+
+        try (InputStream is = Configuration.class.getResourceAsStream("default-config.properties")) {
+            properties.load(is);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("failed to load default configuration", ex);
+        }
+
+        return new Configuration(properties);
     }
 
     public static Configuration loadProperties(File file) {
