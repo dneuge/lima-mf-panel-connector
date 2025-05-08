@@ -2,7 +2,6 @@ package de.energiequant.limamf.connector;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,10 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,15 +23,9 @@ import de.energiequant.apputils.misc.attribution.CopyrightNoticeProvider;
 import de.energiequant.apputils.misc.attribution.CopyrightNotices;
 import de.energiequant.apputils.misc.attribution.License;
 import de.energiequant.apputils.misc.attribution.Project;
-import de.energiequant.limamf.compat.config.connector.ConfigNode;
-import de.energiequant.limamf.compat.config.connector.ConnectorConfiguration;
-import de.energiequant.limamf.compat.config.connector.ModuleBindable;
 import de.energiequant.limamf.connector.gui.MainWindow;
-import de.energiequant.limamf.connector.panels.DCPCCPPanel;
 import de.energiequant.limamf.connector.panels.Panel;
-import de.energiequant.limamf.connector.panels.PanelEventListener;
 import de.energiequant.limamf.connector.simulator.SimulatorClient;
-import de.energiequant.limamf.connector.simulator.SimulatorEventListener;
 
 public class Main {
     // FIXME: only run while disclaimer is accepted
@@ -42,21 +33,22 @@ public class Main {
     // TODO: configuration (generalized => app-utils?)
     // TODO: CLI/headless mode?
     // TODO: wrap with launcher (see legacy proxy)
-    // TODO: restart/rescan
+    // TODO: restart via GUI
+    // TODO: save config
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    private final Set<String> enabledSerialIds = new HashSet<>();
-    private final ConnectorConfiguration connectorConfiguration;
-
-    private final List<Panel> activePanels = new ArrayList<>();
-
-    private final SimulatorClient simulatorClient;
-
-    private final SimulatorEventProxy simulatorEventProxy;
-    private final PanelEventProxy panelEventProxy;
-
     private final DisclaimerState disclaimerState = new DisclaimerState(APPLICATION_INFO);
+
+    private final Configuration config;
+    private final AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor;
+    private final ModuleDiscovery moduleDiscovery;
+    private final Map<String, SimulatorClient.Factory> simulatorClients;
+    private final SimulatorClient.Factory simulatorClientFactory;
+    private final Map<String, Panel.Factory> panelFactories;
+    private final Linker linker;
+
+    private static final String DEFAULT_CONFIG_PATH = "lima-mf.properties";
 
     private static final ApplicationInfo APPLICATION_INFO = new ApplicationInfo() {
         @Override
@@ -113,168 +105,66 @@ public class Main {
         }
     };
 
-    private abstract static class EventProxy<T> {
-        private final Collection<T> targets = new ArrayList<>();
+    private Main(Configuration config, AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor, ModuleDiscovery moduleDiscovery) {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::terminate));
 
-        protected Collection<T> copyTargets() {
-            Collection<T> out;
-            synchronized (targets) {
-                out = new ArrayList<>(targets);
-            }
-            return out;
-        }
+        this.config = config;
+        this.usbSerialDeviceMonitor = usbSerialDeviceMonitor;
+        this.moduleDiscovery = moduleDiscovery;
 
-        public void attachListener(T listener) {
-            synchronized (targets) {
-                if (!targets.contains(listener)) {
-                    targets.add(listener);
-                }
-            }
-        }
-
-        public void detachListener(T listener) {
-            synchronized (targets) {
-                targets.remove(listener);
-            }
-        }
-    }
-
-    private static class SimulatorEventProxy extends EventProxy<SimulatorEventListener> implements SimulatorEventListener {
-        @Override
-        public void onSimStatusChanged(SimulatorStatus status, String msg) {
-            for (SimulatorEventListener listener : copyTargets()) {
-                try {
-                    listener.onSimStatusChanged(status, msg);
-                } catch (Exception ex) {
-                    LOGGER.warn("onSimStatusChanged: failed to notify listener {}", listener, ex);
-                }
-            }
-        }
-
-        @Override
-        public void onSimPanelBrightnessChanged(double fraction) {
-            for (SimulatorEventListener listener : copyTargets()) {
-                try {
-                    listener.onSimPanelBrightnessChanged(fraction);
-                } catch (Exception ex) {
-                    LOGGER.warn("onSimPanelBrightnessChanged: failed to notify listener {}", listener, ex);
-                }
-            }
-        }
-    }
-
-    private static class PanelEventProxy extends EventProxy<PanelEventListener> implements PanelEventListener {
-        @Override
-        public void onPanelEvent(DCPCCPPanel.Event event) {
-            for (PanelEventListener listener : copyTargets()) {
-                try {
-                    listener.onPanelEvent(event);
-                } catch (Exception ex) {
-                    LOGGER.warn("onPanelEvent: failed to notify listener {}", listener, ex);
-                }
-            }
-        }
-    }
-
-    private Main(Configuration config) {
-        // TODO: relocate to GUI, accept none-existing config
-
-        config.getUSBInterfaceIds()
-              .getAllPresent()
-              .stream()
-              .map(USBDeviceId::getSerial)
-              .map(x -> x.orElseThrow(() -> new IllegalArgumentException("approved devices are required to have a serial ID")))
-              .forEach(enabledSerialIds::add);
-        if (enabledSerialIds.isEmpty()) {
-            throw new IllegalArgumentException("at least one serial ID is required");
-        }
-
-        Collection<Configuration.Module> moduleConfigs = config.getModules();
-        if (moduleConfigs.size() != 1) {
-            throw new IllegalArgumentException("exactly one module config is required, got " + moduleConfigs.size());
-        }
-
-        Configuration.Module moduleConfig = moduleConfigs.iterator().next();
-
-        // TODO: restrict to configured type, name and device serial
-
-        simulatorEventProxy = new SimulatorEventProxy();
-        panelEventProxy = new PanelEventProxy();
-
-        Map<String, SimulatorClient.Factory> simulatorClients = findSimulatorClients();
+        panelFactories = Collections.unmodifiableMap(indexPanelFactories());
+        simulatorClients = findSimulatorClients();
 
         // TODO: read wanted client from config instead of requiring exactly one to be present (+ select on GUI)
         if (simulatorClients.size() != 1) {
             LOGGER.error("Exactly one simulator client must be present on class path, found: {}", simulatorClients);
             System.exit(1);
         }
-        SimulatorClient.Factory simulatorClientFactory = simulatorClients.entrySet().iterator().next().getValue();
+        simulatorClientFactory = simulatorClients.entrySet().iterator().next().getValue();
 
-        // TODO: provide actual configuration from sub-properties
-        Properties simulatorClientProperties = new Properties();
-
-        LOGGER.info("Using simulator client: {} [{}]", simulatorClientFactory.getClientName(), simulatorClientFactory.getClientId());
-        simulatorClient = simulatorClientFactory.createClient(simulatorClientProperties, simulatorEventProxy).orElse(null);
-        if (simulatorClient == null) {
-            LOGGER.error("Failed to create simulator client: {} [{}]", simulatorClientFactory.getClientName(), simulatorClientFactory.getClientId());
-            System.exit(1);
-        }
-        panelEventProxy.attachListener(simulatorClient.getPanelEventListener());
-
-        connectorConfiguration = ConnectorConfiguration.fromXML(moduleConfig.getConnectorConfig());
-        Set<String> serials = connectorConfiguration.getSerials();
-        LOGGER.debug("Serials in connector configuration: {}", serials);
-        if (serials.size() != 1) {
-            // TODO: map config serial to device serial; auto-select if unambiguous
-            throw new IllegalArgumentException("Unsupported number of serials in config file; found " + serials.size() + ", expected exactly 1");
-        }
-
-        Runtime.getRuntime().addShutdownHook(new Thread(this::terminate));
+        linker = new Linker(panelFactories, moduleDiscovery.getCollectionProxy());
     }
 
-    private void connect() {
-        LOGGER.info("Searching USB devices...");
-        DeviceDiscovery deviceDiscovery = DeviceDiscovery.getInstance();
-        Collection<USBDevice> usbDevices = deviceDiscovery.findUSBSerialDevices()
-                                                          .stream()
-                                                          .filter(deviceDiscovery::isKnownUSBProduct)
-                                                          .collect(Collectors.toList());
-        if (usbDevices.isEmpty()) {
-            LOGGER.error("no supported USB devices found");
-            return;
-        }
+    public boolean startModules() {
+        // FIXME: only start if current disclaimer has been accepted
+        linker.enable(simulatorClientFactory, config.getModules());
+        return true;
+    }
 
-        LOGGER.debug("Found USB devices: {}", usbDevices);
+    public boolean stopModules() {
+        return linker.disable();
+    }
 
-        try {
-            for (USBDevice usbDevice : usbDevices) {
-                String serialId = usbDevice.getId().getSerial().orElse(null);
-                if (serialId == null) {
-                    LOGGER.warn("Ignoring USB device without serial: {}", usbDevice);
-                    continue;
-                }
+    private Map<String, Panel.Factory> indexPanelFactories() {
+        Map<String, Panel.Factory> out = new HashMap<>();
 
-                if (!enabledSerialIds.contains(serialId)) {
-                    LOGGER.warn("USB device is not enabled, ignoring: {}", usbDevice);
-                    continue;
-                }
-
-                DCPCCPPanel panel = DCPCCPPanel.tryConnect(panelEventProxy, usbDevice, connectorConfiguration).orElse(null);
-                if (panel != null) {
-                    activePanels.add(panel);
-                    panel.getSimulatorEventListener().ifPresent(simulatorEventProxy::attachListener);
-                }
+        Set<String> disabledFactoryIds = new HashSet<>();
+        for (Panel.Factory factory : ServiceLoader.load(Panel.Factory.class)) {
+            String id = factory.getId();
+            if (disabledFactoryIds.contains(id)) {
+                LOGGER.warn("Not recording disabled factory: \"{}\" {}", id, factory.getClass().getCanonicalName());
+                continue;
             }
-        } catch (InterruptedException ex) {
-            LOGGER.error("interrupted, exiting", ex);
-            System.exit(1);
+
+            Panel.Factory previous = out.put(id, factory);
+            if (previous != null) {
+                LOGGER.warn(
+                    "Multiple factories use same ID, disabling: \"{}\" {} {}",
+                    id, factory.getClass().getCanonicalName(), previous.getClass().getCanonicalName()
+                );
+                out.remove(id);
+                disabledFactoryIds.add(id);
+                continue;
+            }
+
+            LOGGER.debug("Recorded panel factory: \"{}\" {}", id, factory.getClass().getCanonicalName());
         }
 
-        // TODO: monitor for panels to get connected later
-        if (activePanels.isEmpty()) {
-            LOGGER.error("no panels found, exiting");
-            System.exit(1);
-        }
+        return out;
+    }
+
+    public Map<String, Panel.Factory> getPanelFactories() {
+        return panelFactories;
     }
 
     private static Map<String, SimulatorClient.Factory> findSimulatorClients() {
@@ -292,35 +182,54 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Configuration config = Configuration.loadProperties(new File(args[0]));
-        AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor = DeviceDiscovery.getInstance().monitorUSBSerialDevices(); // TODO: use globally; optionally override filter
+        // TODO: add more command line options
+        String configPath = DEFAULT_CONFIG_PATH;
+        if (args.length > 0) {
+            configPath = args[0];
+        }
+
+        Configuration config;
+        File configFile = new File(configPath);
+        if (configFile.exists()) {
+            config = Configuration.loadProperties(configFile);
+        } else {
+            config = Configuration.createFromDefaults().setSaveLocation(configFile);
+        }
+
+        // TODO: add option to override device node name filter
+        AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor = DeviceDiscovery.getInstance().monitorUSBSerialDevices();
         usbSerialDeviceMonitor.start();
-        Main main = new Main(config);
-        new MainWindow(main, main::terminate);
-        main.connect();
+
+        ModuleDiscovery moduleDiscovery = new ModuleDiscovery(config, usbSerialDeviceMonitor.getCollectionProxy());
+        moduleDiscovery.start();
+
+        try {
+            Main main = new Main(config, usbSerialDeviceMonitor, moduleDiscovery);
+
+            // TODO: enable headless operation
+            new MainWindow(main, main::terminate);
+
+            // TODO: auto-start only if configured to do so
+            main.startModules();
+        } catch (Exception ex) {
+            LOGGER.error("application startup failed", ex);
+            moduleDiscovery.shutdown();
+            usbSerialDeviceMonitor.shutdown();
+        }
     }
 
     private void terminate() {
         // TODO: AFAIR logger may have been terminated at this point except it isn't (maybe due to threading?)
-
-        if (simulatorClient != null) {
-            try {
-                LOGGER.info("disposing simulator client");
-                panelEventProxy.detachListener(simulatorClient.getPanelEventListener());
-                simulatorClient.disposeSimulatorClient();
-            } catch (Exception ex) {
-                LOGGER.warn("failed to dispose simulator client", ex);
-            }
+        if (linker != null) {
+            linker.disable();
         }
 
-        for (Panel panel : activePanels) {
-            try {
-                LOGGER.info("disconnecting from panel {}", panel);
-                panel.getSimulatorEventListener().ifPresent(simulatorEventProxy::detachListener);
-                panel.disconnect();
-            } catch (Exception ex) {
-                LOGGER.warn("failed to disconnect panel {}", panel);
-            }
+        if (moduleDiscovery != null) {
+            moduleDiscovery.shutdown();
+        }
+
+        if (usbSerialDeviceMonitor != null) {
+            usbSerialDeviceMonitor.shutdown();
         }
     }
 

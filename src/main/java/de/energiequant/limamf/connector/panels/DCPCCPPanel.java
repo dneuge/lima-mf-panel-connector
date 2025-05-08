@@ -1076,6 +1076,7 @@ public class DCPCCPPanel implements Panel {
 
         @Override
         public Panel create(PanelEventListener eventListener, ModuleDiscovery.ConnectedModule module, ConnectorConfiguration connectorConfiguration, String connectorConfigurationSerial) {
+            // FIXME: filter for connector serial
             try {
                 return tryConnect(eventListener, module.getUSBDevice(), connectorConfiguration).orElseThrow(() -> new IllegalArgumentException("unable to instantiate"));
             } catch (InterruptedException ex) {
