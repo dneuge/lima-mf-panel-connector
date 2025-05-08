@@ -35,6 +35,8 @@ public class Configuration {
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG = "mcc";
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL = "mccSerial";
 
+    private File saveLocation;
+
     private String acceptedDisclaimer;
     private final ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> usbInterfaceIds = new ObservableCollectionProxy<>(HashSet::new);
     private final Map<ModuleId, Module> modulesById = new HashMap<>();
@@ -189,6 +191,15 @@ public class Configuration {
                               .forEach(this::putModule);
     }
 
+    public Configuration setSaveLocation(File saveLocation) {
+        this.saveLocation = saveLocation;
+        return this;
+    }
+
+    public Optional<File> getSaveLocation() {
+        return Optional.ofNullable(saveLocation);
+    }
+
     public Optional<Module> getModule(ModuleId id) {
         return Optional.ofNullable(modulesById.get(id));
     }
@@ -275,6 +286,6 @@ public class Configuration {
             throw new IllegalArgumentException("failed to load configuration from " + file.getAbsolutePath(), ex);
         }
 
-        return new Configuration(properties);
+        return new Configuration(properties).setSaveLocation(file);
     }
 }
