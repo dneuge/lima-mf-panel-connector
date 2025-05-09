@@ -170,6 +170,7 @@ public class ConfigurationWindow extends JDialog {
 
     private void applyChanges() {
         config.setModules(moduleListPanel.toConfigModules());
+        config.trySave();
     }
 
     private void close() {

@@ -177,6 +177,8 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         added.forEach(configuredUSBDeviceIds::add);
 
         LOGGER.debug("changes have been applied");
+
+        config.trySave();
     }
 
     private void close() {
