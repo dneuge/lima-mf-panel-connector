@@ -46,8 +46,6 @@ public class Configuration {
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG = "mcc";
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL = "mccSerial";
 
-    private final DisclaimerState disclaimerState;
-
     private File saveLocation;
 
     private String acceptedDisclaimer;
@@ -187,8 +185,6 @@ public class Configuration {
     }
 
     private Configuration(Properties properties, DisclaimerState disclaimerState) {
-        this.disclaimerState = disclaimerState;
-
         int version = Integer.parseUnsignedInt(getMandatoryString(properties, PROPERTY_VERSION));
         if (version != VERSION) {
             throw new IllegalArgumentException("unsupported config file version " + version);
@@ -243,6 +239,14 @@ public class Configuration {
 
     public Optional<String> getAcceptedDisclaimer() {
         return Optional.ofNullable(acceptedDisclaimer);
+    }
+
+    public void setAcceptedDisclaimer(String acceptedDisclaimer) {
+        this.acceptedDisclaimer = acceptedDisclaimer;
+    }
+
+    public void unsetAcceptedDisclaimer() {
+        this.acceptedDisclaimer = null;
     }
 
     public Set<Module> getModules() {

@@ -213,6 +213,18 @@ public class Main {
             config = Configuration.createFromDefaults(disclaimerState).setSaveLocation(configFile);
         }
 
+        disclaimerState.addListener(() -> {
+            LOGGER.debug("Disclaimer state changed, persisting in config...");
+
+            if (disclaimerState.isAccepted()) {
+                config.setAcceptedDisclaimer(disclaimerState.getDisclaimerHash());
+            } else {
+                config.unsetAcceptedDisclaimer();
+            }
+
+            config.trySave();
+        });
+
         // TODO: add option to override device node name filter
         AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor = DeviceDiscovery.getInstance().monitorUSBSerialDevices();
         usbSerialDeviceMonitor.start();
