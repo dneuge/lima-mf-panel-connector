@@ -224,7 +224,10 @@ public class Main {
             Main main = new Main(config, usbSerialDeviceMonitor, moduleDiscovery, disclaimerState);
 
             // TODO: enable headless operation
-            new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), moduleDiscovery.getCollectionProxy(), main::terminate);
+            MainWindow mainWindow = new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), moduleDiscovery.getCollectionProxy(), main::terminate);
+            if (!disclaimerState.isAccepted()) {
+                mainWindow.showDisclaimer();
+            }
 
             // TODO: auto-start only if configured to do so
             main.startModules();

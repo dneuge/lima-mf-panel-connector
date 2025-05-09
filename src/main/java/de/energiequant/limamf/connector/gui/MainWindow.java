@@ -101,6 +101,11 @@ public class MainWindow extends JFrame {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
+    public void showDisclaimer() {
+        setVisible(true);
+        aboutWindow.showDisclaimer();
+    }
+
     private void onRunStopClicked(ActionEvent event) {
         if (!main.isRunning()) {
             main.startModules();
