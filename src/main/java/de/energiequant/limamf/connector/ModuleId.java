@@ -1,11 +1,16 @@
 package de.energiequant.limamf.connector;
 
+import java.util.Comparator;
 import java.util.Objects;
 
-public class ModuleId {
+public class ModuleId implements Comparable<ModuleId> {
     private final String type;
     private final String name;
     private final String serial;
+
+    private static final Comparator<ModuleId> COMPARATOR = Comparator.comparing(ModuleId::getType)
+                                                                     .thenComparing(ModuleId::getName)
+                                                                     .thenComparing(ModuleId::getSerial);
 
     private ModuleId(String type, String name, String serial) {
         this.type = type;
@@ -23,6 +28,11 @@ public class ModuleId {
 
     public String getSerial() {
         return serial;
+    }
+
+    @Override
+    public int compareTo(ModuleId o) {
+        return COMPARATOR.compare(this, o);
     }
 
     @Override
