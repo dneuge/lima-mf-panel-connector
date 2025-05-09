@@ -28,7 +28,7 @@
         <finalName>lima-mf</finalName>
 
         <directory.generated.resources>src-gen/main/resources</directory.generated.resources>
-        <mainClass>de.energiequant.limamf.connector.Main</mainClass>
+        <mainClass>de.energiequant.limamf.connector.Launcher</mainClass>
 
         <!-- runtime dependencies -->
         <appUtilsMisc.version>0.1-SNAPSHOT</appUtilsMisc.version>

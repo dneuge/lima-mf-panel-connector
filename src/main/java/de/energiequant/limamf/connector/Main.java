@@ -63,6 +63,7 @@ public class Main {
 
         @Override
         public String getApplicationName() {
+            // NOTE: also needs to be set in Launcher
             return "LiMa-MF Flight Simulation Panel Connector";
         }
 
