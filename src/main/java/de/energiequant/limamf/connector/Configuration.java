@@ -17,6 +17,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.energiequant.apputils.misc.DisclaimerState;
+
 public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
@@ -35,6 +37,8 @@ public class Configuration {
     private static final String PROPERTY_MODULE_PANEL_FACTORY_ID = "panelFactoryId";
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG = "mcc";
     private static final String PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL = "mccSerial";
+
+    private final DisclaimerState disclaimerState;
 
     private File saveLocation;
 
@@ -171,13 +175,16 @@ public class Configuration {
         }
     }
 
-    private Configuration(Properties properties) {
+    private Configuration(Properties properties, DisclaimerState disclaimerState) {
+        this.disclaimerState = disclaimerState;
+
         int version = Integer.parseUnsignedInt(getMandatoryString(properties, PROPERTY_VERSION));
         if (version != VERSION) {
             throw new IllegalArgumentException("unsupported config file version " + version);
         }
 
         acceptedDisclaimer = getOptionalString(properties, PROPERTY_DISCLAIMER).orElse(null);
+        disclaimerState.setAccepted(disclaimerState.getDisclaimerHash().equals(acceptedDisclaimer));
 
         streamKeys(properties).filter(x -> x.startsWith(PROPERTY_USB_INTERFACES_PREFIX))
                               .map(x -> x.substring(0, x.indexOf(".", PROPERTY_USB_INTERFACES_PREFIX.length()) + 1))
@@ -278,7 +285,7 @@ public class Configuration {
                                   .stream();
     }
 
-    public static Configuration createFromDefaults() {
+    public static Configuration createFromDefaults(DisclaimerState disclaimerState) {
         Properties properties = new Properties();
 
         try (InputStream is = Configuration.class.getResourceAsStream("default-config.properties")) {
@@ -287,10 +294,10 @@ public class Configuration {
             throw new IllegalArgumentException("failed to load default configuration", ex);
         }
 
-        return new Configuration(properties);
+        return new Configuration(properties, disclaimerState);
     }
 
-    public static Configuration loadProperties(File file) {
+    public static Configuration loadProperties(File file, DisclaimerState disclaimerState) {
         Properties properties = new Properties();
 
         try (FileInputStream fis = new FileInputStream(file)) {
@@ -299,6 +306,6 @@ public class Configuration {
             throw new IllegalArgumentException("failed to load configuration from " + file.getAbsolutePath(), ex);
         }
 
-        return new Configuration(properties).setSaveLocation(file);
+        return new Configuration(properties, disclaimerState).setSaveLocation(file);
     }
 }

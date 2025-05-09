@@ -38,7 +38,7 @@ public class Main {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    private final DisclaimerState disclaimerState = new DisclaimerState(APPLICATION_INFO);
+    private final DisclaimerState disclaimerState;
 
     private final Configuration config;
     private final AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor;
@@ -106,10 +106,11 @@ public class Main {
         }
     };
 
-    private Main(Configuration config, AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor, ModuleDiscovery moduleDiscovery) {
+    private Main(Configuration config, AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor, ModuleDiscovery moduleDiscovery, DisclaimerState disclaimerState) {
         Runtime.getRuntime().addShutdownHook(new Thread(this::terminate));
 
         this.config = config;
+        this.disclaimerState = disclaimerState;
         this.usbSerialDeviceMonitor = usbSerialDeviceMonitor;
         this.moduleDiscovery = moduleDiscovery;
 
@@ -123,7 +124,7 @@ public class Main {
         }
         simulatorClientFactory = simulatorClients.entrySet().iterator().next().getValue();
 
-        linker = new Linker(panelFactories, moduleDiscovery.getCollectionProxy());
+        linker = new Linker(panelFactories, moduleDiscovery.getCollectionProxy(), disclaimerState);
     }
 
     public boolean isRunning() {
@@ -131,7 +132,16 @@ public class Main {
     }
 
     public boolean startModules() {
-        // FIXME: only start if current disclaimer has been accepted
+        if (!disclaimerState.isAccepted()) {
+            LOGGER.warn("Disclaimer must be accepted to start connector.");
+            return false;
+        }
+
+        if (config.getModules().isEmpty()) {
+            LOGGER.warn("At least one module must be configured to start connector.");
+            return false;
+        }
+
         linker.enable(simulatorClientFactory, config.getModules());
         return true;
     }
@@ -193,23 +203,25 @@ public class Main {
             configPath = args[0];
         }
 
+        DisclaimerState disclaimerState = new DisclaimerState(APPLICATION_INFO);
+
         Configuration config;
         File configFile = new File(configPath);
         if (configFile.exists()) {
-            config = Configuration.loadProperties(configFile);
+            config = Configuration.loadProperties(configFile, disclaimerState);
         } else {
-            config = Configuration.createFromDefaults().setSaveLocation(configFile);
+            config = Configuration.createFromDefaults(disclaimerState).setSaveLocation(configFile);
         }
 
         // TODO: add option to override device node name filter
         AsyncMonitor<USBDevice, Set<USBDevice>> usbSerialDeviceMonitor = DeviceDiscovery.getInstance().monitorUSBSerialDevices();
         usbSerialDeviceMonitor.start();
 
-        ModuleDiscovery moduleDiscovery = new ModuleDiscovery(config, usbSerialDeviceMonitor.getCollectionProxy());
+        ModuleDiscovery moduleDiscovery = new ModuleDiscovery(config, usbSerialDeviceMonitor.getCollectionProxy(), disclaimerState);
         moduleDiscovery.start();
 
         try {
-            Main main = new Main(config, usbSerialDeviceMonitor, moduleDiscovery);
+            Main main = new Main(config, usbSerialDeviceMonitor, moduleDiscovery, disclaimerState);
 
             // TODO: enable headless operation
             new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), moduleDiscovery.getCollectionProxy(), main::terminate);

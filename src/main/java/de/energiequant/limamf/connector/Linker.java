@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.energiequant.apputils.misc.DisclaimerState;
 import de.energiequant.limamf.compat.config.connector.ConnectorConfiguration;
 import de.energiequant.limamf.connector.panels.DCPCCPPanel;
 import de.energiequant.limamf.connector.panels.Panel;
@@ -24,6 +25,7 @@ public class Linker {
     private static final Logger LOGGER = LoggerFactory.getLogger(Linker.class);
 
     private final Map<String, Panel.Factory> panelFactories;
+    private final DisclaimerState disclaimerState;
     private final Map<ModuleId, Configuration.Module> configuredModules = new HashMap<>();
     private final ObservableCollectionProxy<ModuleDiscovery.ConnectedModule, ?> connectedModules;
     private final ObservableCollectionProxy.Listener<ModuleDiscovery.ConnectedModule> connectedModulesListener;
@@ -36,9 +38,12 @@ public class Linker {
 
     private final AtomicBoolean running = new AtomicBoolean();
 
-    public Linker(Map<String, Panel.Factory> panelFactories, ObservableCollectionProxy<ModuleDiscovery.ConnectedModule, ?> connectedModules) {
+    public Linker(Map<String, Panel.Factory> panelFactories, ObservableCollectionProxy<ModuleDiscovery.ConnectedModule, ?> connectedModules, DisclaimerState disclaimerState) {
         this.panelFactories = panelFactories;
         this.connectedModules = connectedModules;
+        this.disclaimerState = disclaimerState;
+
+        disclaimerState.addListener(this::onDisclaimerStateChanged);
 
         connectedModulesListener = new ObservableCollectionProxy.Listener<ModuleDiscovery.ConnectedModule>() {
             @Override
@@ -51,6 +56,13 @@ public class Linker {
                 onModuleDisconnected(obj);
             }
         };
+    }
+
+    private void onDisclaimerStateChanged() {
+        if (!disclaimerState.isAccepted() && isRunning()) {
+            LOGGER.warn("Disclaimer revoked, stopping...");
+            disable();
+        }
     }
 
     private void onModuleConnected(ModuleDiscovery.ConnectedModule module) {
@@ -107,6 +119,11 @@ public class Linker {
         synchronized (this) {
             if (!running.get()) {
                 LOGGER.warn("aborting startup due to concurrent shutdown");
+                return;
+            }
+
+            if (!disclaimerState.isAccepted()) {
+                LOGGER.warn("aborting startup due to unaccepted disclaimer");
                 return;
             }
 
@@ -182,6 +199,10 @@ public class Linker {
         }
 
         synchronized (this) {
+            if (!disclaimerState.isAccepted()) {
+                throw new InvalidState("disclaimer has not been accepted");
+            }
+
             boolean alreadyRunning = running.getAndSet(true);
             if (alreadyRunning) {
                 throw new InvalidState("linker is already running; unable to reconfigure");

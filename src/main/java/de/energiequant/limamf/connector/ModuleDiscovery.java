@@ -12,11 +12,13 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.energiequant.apputils.misc.DisclaimerState;
 import de.energiequant.limamf.compat.protocol.IdentificationInfoMessage;
 
 public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModule, Set<ModuleDiscovery.ConnectedModule>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModuleDiscovery.class);
 
+    private final DisclaimerState disclaimerState;
     private final ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> wantedUSBInterfaceIds;
     private final ObservableCollectionProxy.Listener<USBDeviceId> wantedUSBInterfaceIdListener;
 
@@ -61,9 +63,10 @@ public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModul
         }
     }
 
-    public ModuleDiscovery(Configuration config, ObservableCollectionProxy<USBDevice, ?> connectedDevices) {
+    public ModuleDiscovery(Configuration config, ObservableCollectionProxy<USBDevice, ?> connectedDevices, DisclaimerState disclaimerState) {
         super(HashSet::new);
 
+        this.disclaimerState = disclaimerState;
         this.connectedDevices = connectedDevices;
         this.connectedModules = getCollectionProxy();
         this.wantedUSBInterfaceIds = config.getUSBInterfaceIds();
@@ -93,6 +96,14 @@ public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModul
         };
 
         probeThread = new Thread(this::probeLoop);
+
+        disclaimerState.addListener(this::onDisclaimerStateChanged);
+    }
+
+    private void onDisclaimerStateChanged() {
+        synchronized (this) {
+            notifyAll();
+        }
     }
 
     @Override
@@ -183,11 +194,11 @@ public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModul
                     break;
                 }
 
-                if (probeQueue.isEmpty()) {
+                if (probeQueue.isEmpty() || !disclaimerState.isAccepted()) {
                     try {
                         wait(probeCheckMillis);
                     } catch (InterruptedException ex) {
-                        LOGGER.error("interrupted while waiting for probe requests; exiting", ex);
+                        LOGGER.error("interrupted while waiting in probe loop; exiting", ex);
                         System.exit(1);
                     }
                     continue;
@@ -250,8 +261,9 @@ public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModul
                 boolean blocked = blockedUSBInterfaceIds.contains(deviceId);
                 wanted = wantedUSBInterfaceIds.contains(deviceId);
                 connected = connectedDevices.contains(device);
-                if (shouldShutdown() || blocked || !(wanted && connected)) {
-                    LOGGER.debug("probe is no longer valid, shutdown={}, wanted={}, connected={}, blocked={}: {}", shouldShutdown(), wanted, connected, blocked, device);
+                boolean disclaimerAccepted = disclaimerState.isAccepted();
+                if (shouldShutdown() || blocked || !(wanted && connected) || !disclaimerAccepted) {
+                    LOGGER.debug("probe is no longer valid, shutdown={}, wanted={}, connected={}, blocked={}, disclaimerAccepted={}: {}", shouldShutdown(), wanted, connected, blocked, disclaimerAccepted, device);
                     continue;
                 }
 
