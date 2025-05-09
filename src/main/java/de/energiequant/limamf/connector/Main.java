@@ -28,13 +28,7 @@ import de.energiequant.limamf.connector.panels.Panel;
 import de.energiequant.limamf.connector.simulator.SimulatorClient;
 
 public class Main {
-    // FIXME: only run while disclaimer is accepted
-    // TODO: open disclaimer if not accepted on startup
-    // TODO: configuration (generalized => app-utils?)
     // TODO: CLI/headless mode?
-    // TODO: wrap with launcher (see legacy proxy)
-    // TODO: restart via GUI
-    // TODO: save config
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
