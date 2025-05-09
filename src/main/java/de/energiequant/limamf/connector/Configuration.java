@@ -256,7 +256,7 @@ public class Configuration {
         return usbInterfaceIds;
     }
 
-    public USBDeviceId parseUSBInterface(Properties properties, String prefix) {
+    private USBDeviceId parseUSBInterface(Properties properties, String prefix) {
         return USBDeviceId.builder()
                           .setVendor(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_VENDOR))
                           .setProduct(getMandatoryString(properties, prefix + PROPERTY_USB_INTERFACES_PRODUCT))
