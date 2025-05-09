@@ -43,7 +43,7 @@
         <junit.version>5.9.3</junit.version>
         <assertj.version>3.24.2</assertj.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <mockito.version>5.3.1</mockito.version>
+        <mockito.version>4.11.0</mockito.version> <!-- Mockito 5 requires Java 11 -->
 
         <!-- build dependencies -->
         <maven.compiler.version>3.11.0</maven.compiler.version>
