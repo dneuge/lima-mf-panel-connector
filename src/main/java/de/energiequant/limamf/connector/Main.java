@@ -126,6 +126,10 @@ public class Main {
         linker = new Linker(panelFactories, moduleDiscovery.getCollectionProxy());
     }
 
+    public boolean isRunning() {
+        return linker.isRunning();
+    }
+
     public boolean startModules() {
         // FIXME: only start if current disclaimer has been accepted
         linker.enable(simulatorClientFactory, config.getModules());
@@ -208,7 +212,7 @@ public class Main {
             Main main = new Main(config, usbSerialDeviceMonitor, moduleDiscovery);
 
             // TODO: enable headless operation
-            new MainWindow(main, main::terminate);
+            new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), moduleDiscovery.getCollectionProxy(), main::terminate);
 
             // TODO: auto-start only if configured to do so
             main.startModules();
