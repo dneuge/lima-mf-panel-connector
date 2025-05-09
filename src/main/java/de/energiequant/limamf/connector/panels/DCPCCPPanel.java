@@ -1,7 +1,5 @@
 package de.energiequant.limamf.connector.panels;
 
-import static de.energiequant.limamf.connector.DeviceCommunicator.probe;
-
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,7 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -41,13 +38,12 @@ import de.energiequant.limamf.compat.protocol.ConfigurationInfoMessage;
 import de.energiequant.limamf.compat.protocol.DigitalInputMultiplexerChangeMessage;
 import de.energiequant.limamf.compat.protocol.EncoderChangeMessage;
 import de.energiequant.limamf.compat.protocol.GetConfigMessage;
-import de.energiequant.limamf.compat.protocol.GetInfoMessage;
-import de.energiequant.limamf.compat.protocol.IdentificationInfoMessage;
 import de.energiequant.limamf.compat.protocol.SetPinMessage;
 import de.energiequant.limamf.compat.utils.Maps;
 import de.energiequant.limamf.compat.utils.Numbers;
 import de.energiequant.limamf.connector.DeviceCommunicator;
 import de.energiequant.limamf.connector.ModuleDiscovery;
+import de.energiequant.limamf.connector.ModuleId;
 import de.energiequant.limamf.connector.USBDevice;
 import de.energiequant.limamf.connector.simulator.SimulatorEventListener;
 
@@ -57,10 +53,7 @@ public class DCPCCPPanel implements Panel {
     private final PanelEventListener recipient;
     private final SimulatorEventListener simulatorEventListener;
 
-    private final String interfaceName;
-    private final String interfaceSerialNumber;
     private final String protocolVersion;
-    private final AtomicBoolean verified = new AtomicBoolean(false);
 
     private final DeviceCommunicator communicator;
 
@@ -73,8 +66,6 @@ public class DCPCCPPanel implements Panel {
 
     private final AtomicReference<Instant> leftButtonPushed = new AtomicReference<>();
     private final AtomicReference<Instant> rightButtonPushed = new AtomicReference<>();
-
-    private static final String EXPECTED_NAME = "CL650 DCP-CCP";
 
     private static final Duration LONG_PRESS_DURATION = Duration.ofMillis(250);
 
@@ -479,11 +470,11 @@ public class DCPCCPPanel implements Panel {
         }
     }
 
-    private DCPCCPPanel(PanelEventListener recipient, USBDevice usbDevice, ConnectorConfiguration connectorConfiguration, String interfaceName, String interfaceSerialNumber, String protocolVersion) {
+    private DCPCCPPanel(PanelEventListener recipient, ModuleDiscovery.ConnectedModule module, ConnectorConfiguration connectorConfiguration, String connectorConfigurationSerial) {
         this.recipient = recipient;
-        this.interfaceName = interfaceName;
-        this.interfaceSerialNumber = interfaceSerialNumber;
-        this.protocolVersion = protocolVersion;
+        this.protocolVersion = module.getVersion();
+
+        USBDevice usbDevice = module.getUSBDevice();
 
         simulatorEventListener = new SimulatorEventListener.Adapter() {
             @Override
@@ -492,7 +483,6 @@ public class DCPCCPPanel implements Panel {
             }
         };
 
-        String interfaceSerialId = interfaceName + "/ " + interfaceSerialNumber;
         for (ConfigItem input : connectorConfiguration.getItems(ConfigItem.Direction.INPUT)) {
             if (!input.isActive()) {
                 continue;
@@ -500,9 +490,9 @@ public class DCPCCPPanel implements Panel {
 
             Settings settings = input.getSettings();
             if (settings instanceof InputMultiplexerSettings) {
-                indexConfigItem(input, interfaceSerialId, (InputMultiplexerSettings) settings);
+                indexConfigItem(input, connectorConfigurationSerial, (InputMultiplexerSettings) settings);
             } else if (settings instanceof EncoderSettings) {
-                indexConfigItem(input, interfaceSerialId, (EncoderSettings) settings);
+                indexConfigItem(input, connectorConfigurationSerial, (EncoderSettings) settings);
             }
         }
         for (ConfigItem output : connectorConfiguration.getItems(ConfigItem.Direction.OUTPUT)) {
@@ -513,19 +503,19 @@ public class DCPCCPPanel implements Panel {
             Settings settings = output.getSettings();
             Display display = settings.getDisplay().orElse(null);
             if (display instanceof OutputDisplay) {
-                indexConfigItem(output, interfaceSerialId, (OutputDisplay) display);
+                indexConfigItem(output, connectorConfigurationSerial, (OutputDisplay) display);
             }
         }
         if (!checkConsistentDisplayConfigurations()) {
             throw new IllegalArgumentException("invalid display configuration");
         }
 
-        LOGGER.info("Connecting to {} ({}, serial {}, protocol {})", usbDevice, interfaceName, interfaceSerialNumber, protocolVersion);
+        ModuleId moduleId = module.getModuleId();
+        LOGGER.info("Connecting to {} ({}, serial {}, protocol {})", usbDevice, moduleId.getName(), moduleId.getSerial(), protocolVersion);
 
         File deviceNode = usbDevice.getDeviceNode().orElseThrow(() -> new IllegalArgumentException("no device node"));
         communicator = new DeviceCommunicator(deviceNode, protocolVersion, this::onCommandMessage);
 
-        communicator.send(new GetInfoMessage()); // will be verified to match previous identification
         communicator.send(new GetConfigMessage());
     }
 
@@ -690,40 +680,10 @@ public class DCPCCPPanel implements Panel {
                            .add(usage);
     }
 
-    public static Optional<DCPCCPPanel> tryConnect(PanelEventListener eventListener, USBDevice usbDevice, ConnectorConfiguration connectorConfiguration) throws InterruptedException {
-        File deviceNode = usbDevice.getDeviceNode().orElse(null);
-        if (deviceNode == null) {
-            LOGGER.warn("Enabled USB device has no device node, unable to connect: {}", usbDevice);
-            return Optional.empty();
-        }
-
-        LOGGER.info("Probing {}", usbDevice);
-        IdentificationInfoMessage identification = probe(deviceNode).orElse(null);
-        if (identification == null) {
-            LOGGER.warn("Probe failed, ignoring: {}", usbDevice);
-            return Optional.empty();
-        }
-
-        if (!identification.getVersion().equals(identification.getCoreVersion())) {
-            LOGGER.error("interface reported inconsistent versions, ignoring {}: {}", usbDevice, identification);
-            return Optional.empty();
-        }
-
-        String interfaceName = identification.getName();
-        if (!EXPECTED_NAME.equals(interfaceName)) {
-            LOGGER.warn("Wrong name \"{}\", ignoring: {}", interfaceName, usbDevice);
-            return Optional.empty();
-        }
-
-        return Optional.of(new DCPCCPPanel(eventListener, usbDevice, connectorConfiguration, interfaceName, identification.getSerial(), identification.getVersion()));
-    }
-
     private void onCommandMessage(DeviceCommunicator communicator, CommandMessage msg) {
         LOGGER.debug("onCommandMessage {}", msg);
 
-        if (msg instanceof IdentificationInfoMessage) {
-            onCommandMessage((IdentificationInfoMessage) msg);
-        } else if (msg instanceof ConfigurationInfoMessage) {
+        if (msg instanceof ConfigurationInfoMessage) {
             onCommandMessage((ConfigurationInfoMessage) msg);
         } else if (msg instanceof DigitalInputMultiplexerChangeMessage) {
             onCommandMessage((DigitalInputMultiplexerChangeMessage) msg);
@@ -734,23 +694,6 @@ public class DCPCCPPanel implements Panel {
             communicator.shutdownAsync();
             System.exit(1);
         }
-    }
-
-    private void onCommandMessage(IdentificationInfoMessage msg) {
-        if (!msg.getVersion().equals(msg.getCoreVersion())) {
-            LOGGER.error("interface reports inconsistent versions, panicking: {}", msg);
-            communicator.shutdownAsync();
-            System.exit(1);
-        }
-
-        if (!interfaceName.equals(msg.getName()) || !interfaceSerialNumber.equals(msg.getSerial())) {
-            LOGGER.error("interface has changed identification, panicking: {}", msg);
-            communicator.shutdownAsync();
-            System.exit(1);
-        }
-
-        LOGGER.debug("Verified: {}", msg);
-        verified.set(true);
     }
 
     private void onCommandMessage(ConfigurationInfoMessage msg) {
@@ -811,11 +754,6 @@ public class DCPCCPPanel implements Panel {
     }
 
     private void onCommandMessage(DigitalInputMultiplexerChangeMessage msg) {
-        if (!verified.get()) {
-            LOGGER.debug("ignoring input before interface has been verified: {}", msg);
-            return;
-        }
-
         DigitalInputMultiplexerChangeMessage.Event muxEvent = msg.getEvent();
 
         LOGGER.debug("onCommandMessage received DigInMux {} {}", muxEvent, msg);
@@ -864,11 +802,6 @@ public class DCPCCPPanel implements Panel {
     }
 
     private void onCommandMessage(EncoderChangeMessage msg) {
-        if (!verified.get()) {
-            LOGGER.debug("ignoring input before interface has been verified: {}", msg);
-            return;
-        }
-
         LOGGER.debug("onCommandMessage received Encoder {}", msg);
 
         Side side = selectedSide.get();
@@ -1076,14 +1009,7 @@ public class DCPCCPPanel implements Panel {
 
         @Override
         public Panel create(PanelEventListener eventListener, ModuleDiscovery.ConnectedModule module, ConnectorConfiguration connectorConfiguration, String connectorConfigurationSerial) {
-            // FIXME: filter for connector serial
-            try {
-                return tryConnect(eventListener, module.getUSBDevice(), connectorConfiguration).orElseThrow(() -> new IllegalArgumentException("unable to instantiate"));
-            } catch (InterruptedException ex) {
-                LOGGER.error("interrupted while trying to connect {}", module, ex);
-                System.exit(1);
-                throw new RuntimeException(ex);
-            }
+            return new DCPCCPPanel(eventListener, module, connectorConfiguration, connectorConfigurationSerial);
         }
     }
 }
