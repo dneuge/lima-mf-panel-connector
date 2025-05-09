@@ -1,17 +1,25 @@
 package de.energiequant.limamf.connector;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -45,6 +53,9 @@ public class Configuration {
     private String acceptedDisclaimer;
     private final ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> usbInterfaceIds = new ObservableCollectionProxy<>(HashSet::new);
     private final Map<ModuleId, Module> modulesById = new HashMap<>();
+
+    private static final Charset PROPERTIES_CHARSET = StandardCharsets.ISO_8859_1;
+    private static final String PROPERTIES_LINE_END = "\n";
 
     public static class Module {
         private final ModuleId id;
@@ -254,6 +265,103 @@ public class Configuration {
 
     public ObservableCollectionProxy<USBDeviceId, Set<USBDeviceId>> getUSBInterfaceIds() {
         return usbInterfaceIds;
+    }
+
+    public boolean trySave() {
+        if (saveLocation == null) {
+            LOGGER.warn("unable to save without file location");
+            return false;
+        }
+
+        Properties properties = toProperties();
+
+        // Properties#store dumps the underlying hashtable in "random" order. We would like to get a more human-readable
+        // config file to easily inspect it manually, so we first serialize the contents and then sort all lines before
+        // writing the actual file.
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            properties.store(baos, null);
+        } catch (IOException ex) {
+            LOGGER.warn("failed to serialize configuration", ex);
+            return false;
+        }
+
+        byte[] out = Arrays.stream(new String(baos.toByteArray(), PROPERTIES_CHARSET).split("\\R"))
+                           .sorted()
+                           .collect(Collectors.joining(PROPERTIES_LINE_END))
+                           .getBytes(PROPERTIES_CHARSET);
+
+        try (FileOutputStream fos = new FileOutputStream(saveLocation)) {
+            fos.write(out);
+            fos.write(PROPERTIES_LINE_END.getBytes(PROPERTIES_CHARSET));
+        } catch (IOException ex) {
+            LOGGER.warn("failed to save configuration to {}", saveLocation, ex);
+            return false;
+        }
+
+        return true;
+    }
+
+    private Properties toProperties() {
+        Properties out = new Properties();
+
+        out.setProperty(PROPERTY_VERSION, Integer.toString(VERSION));
+
+        if (acceptedDisclaimer != null) {
+            out.setProperty(PROPERTY_DISCLAIMER, acceptedDisclaimer);
+        }
+
+        int i = 0;
+        List<USBDeviceId> sortedUSBInterfaceIds = usbInterfaceIds.getAllPresent()
+                                                                 .stream()
+                                                                 .sorted(
+                                                                     Comparator.comparingInt(USBDeviceId::getVendor)
+                                                                               .thenComparingInt(USBDeviceId::getProduct)
+                                                                               .thenComparing(x -> x.getSerial().orElse(""))
+                                                                 )
+                                                                 .collect(Collectors.toList());
+        for (USBDeviceId usbDeviceId : sortedUSBInterfaceIds) {
+            String serial = usbDeviceId.getSerial().orElse(null);
+            if (serial == null) {
+                LOGGER.warn("Unable to save USB device without serial; skipping: {}", usbDeviceId);
+                continue;
+            }
+
+            String prefix = PROPERTY_USB_INTERFACES_PREFIX + i + ".";
+            out.setProperty(prefix + PROPERTY_USB_INTERFACES_VENDOR, String.format("%04X", usbDeviceId.getVendor()));
+            out.setProperty(prefix + PROPERTY_USB_INTERFACES_PRODUCT, String.format("%04X", usbDeviceId.getProduct()));
+            out.setProperty(prefix + PROPERTY_USB_INTERFACES_SERIAL, serial);
+
+            i++;
+        }
+
+        i = 0;
+        List<Module> sortedModules = modulesById.values()
+                                                .stream()
+                                                .sorted(
+                                                    Comparator.comparing(Module::getId)
+                                                )
+                                                .collect(Collectors.toList());
+        for (Module module : sortedModules) {
+            ModuleId id = module.getId();
+            String prefix = PROPERTY_MODULES_PREFIX + i + ".";
+            out.setProperty(prefix + PROPERTY_MODULE_TYPE, id.getType());
+            out.setProperty(prefix + PROPERTY_MODULE_NAME, id.getName());
+            out.setProperty(prefix + PROPERTY_MODULE_DEVICE_SERIAL, id.getSerial());
+            out.setProperty(prefix + PROPERTY_MODULE_PANEL_FACTORY_ID, module.getPanelFactoryId());
+            out.setProperty(prefix + PROPERTY_MODULE_CONNECTOR_CONFIG, module.getConnectorConfig().getAbsolutePath());
+
+            String connectorConfigSerial = module.getConnectorConfigSerial().orElse(null);
+            if (connectorConfigSerial != null) {
+                out.setProperty(prefix + PROPERTY_MODULE_CONNECTOR_CONFIG_SERIAL, connectorConfigSerial);
+            }
+
+            i++;
+        }
+
+        return out;
     }
 
     private USBDeviceId parseUSBInterface(Properties properties, String prefix) {
