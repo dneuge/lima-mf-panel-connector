@@ -441,7 +441,7 @@ public class DCPCCPPanel implements Panel {
             this.pwm = pwm;
             this.maxValue = maxValue;
 
-            if (!pwm && SetPinMessage.isDigitalState(maxValue)) {
+            if (!pwm && !SetPinMessage.isDigitalState(maxValue)) {
                 throw new IllegalArgumentException("max value has to represent a digital state unless PWM is allowed, got " + maxValue);
             }
         }
