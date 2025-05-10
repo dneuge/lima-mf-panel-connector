@@ -552,8 +552,8 @@ public class DCPCCPPanel implements Panel {
             return;
         }
 
-        String description = output.getDescription();
-        OutputUsage usage = OutputUsage.resolve(description).orElse(null);
+        String description = output.getDescription().orElse(null);
+        OutputUsage usage = (description != null) ? OutputUsage.resolve(description).orElse(null) : null;
         if (usage == null) {
             LOGGER.debug("ignoring unhandled config item description: \"{}\"", description);
             return;
@@ -596,6 +596,10 @@ public class DCPCCPPanel implements Panel {
     }
 
     private Usage resolveUsage(String description) {
+        if (description == null) {
+            return null;
+        }
+
         if ("RIGHT_BUTTON".equals(description)) {
             return new Usage(description, null, null, null, InternalSource.SELECT_RIGHT);
         } else if ("LEFT_BUTTON".equals(description)) {
@@ -652,7 +656,7 @@ public class DCPCCPPanel implements Panel {
             return;
         }
 
-        String description = input.getDescription();
+        String description = input.getDescription().orElse(null);
         Usage usage = resolveUsage(description);
         if (usage == null) {
             LOGGER.debug("ignoring unhandled config item description: \"{}\"", description);
@@ -669,7 +673,7 @@ public class DCPCCPPanel implements Panel {
             return;
         }
 
-        String description = input.getDescription();
+        String description = input.getDescription().orElse(null);
         Usage usage = resolveUsage(description);
         if (usage == null) {
             LOGGER.debug("ignoring unhandled config item description: \"{}\"", description);
