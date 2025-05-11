@@ -282,6 +282,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 // remove placeholder text before adding first device
                 if (checkBoxes.isEmpty() && !knownDeviceIds.isEmpty()) {
                     removeAll();
+                    revalidate();
                 }
 
                 int i = 0;
@@ -320,14 +321,15 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
                     checkBox.setText(escapeHtml4(sb.toString()));
 
+                    checkBox.revalidate();
+
                     i++;
                 }
 
                 // removal & invalidating the panel is insufficient
-                // - revalidate must be called to actually get the components removed
-                // - repaint is needed even if the window gets closed/reopened, otherwise remains of previous components will still get drawn
-                revalidate();
-                repaint();
+                // - revalidate must be called to actually get the components removed (done on the changed components above)
+                // - repaint is needed even if the window gets closed/reopened, otherwise remains of previous components may still get drawn
+                SerialDeviceApprovalsWindow.this.repaint();
             }
         }
 
