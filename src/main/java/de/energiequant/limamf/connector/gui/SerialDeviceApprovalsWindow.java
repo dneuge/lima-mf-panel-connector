@@ -136,7 +136,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         super.processWindowEvent(e);
 
         int eventId = e.getID();
-        if ((eventId == WindowEvent.WINDOW_OPENED) || (windowClosed && (eventId == WindowEvent.WINDOW_ACTIVATED))) {
+        if (windowClosed && (eventId == WindowEvent.WINDOW_ACTIVATED)) {
             onWindowOpened();
         } else if (eventId == WindowEvent.WINDOW_CLOSING) {
             if (hasChanges()) {
