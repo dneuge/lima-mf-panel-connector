@@ -207,6 +207,8 @@ public class ConfigurationWindow extends JDialog {
 
     private class ApprovalPanel extends JPanel {
         private ApprovalPanel() {
+            super();
+
             setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
 
@@ -238,6 +240,8 @@ public class ConfigurationWindow extends JDialog {
         private final Map<ModuleId, ModulePanel> modulePanels = new LinkedHashMap<>();
 
         private ModuleListPanel() {
+            super();
+
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             setBackground(Color.WHITE);
 
@@ -337,6 +341,8 @@ public class ConfigurationWindow extends JDialog {
         private final FileFilter mccFileFilter = new FileNameExtensionFilter("MobiFlight Connector configuration (.mcc)", "mcc");
 
         private ModulePanel(ModuleId id) {
+            super();
+
             this.id = id;
 
             setBackground(Color.WHITE);
@@ -672,6 +678,8 @@ public class ConfigurationWindow extends JDialog {
         private final JPanel filler;
 
         TopAlignedPanel(JComponent topComponent) {
+            super();
+
             setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
 

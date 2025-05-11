@@ -53,6 +53,8 @@ public class SerialDeviceApprovalsWindow extends JDialog {
     private boolean windowClosed = true;
 
     public SerialDeviceApprovalsWindow(Configuration config, ObservableCollectionProxy<USBDevice, ?> connectedUSBDevices) {
+        super();
+
         this.config = config;
         this.connectedUSBDevices = connectedUSBDevices;
         this.configuredUSBDeviceIds = config.getUSBInterfaceIds();
@@ -207,6 +209,8 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         private Set<USBDeviceId> approvedDeviceIds = new HashSet<>();
 
         private DeviceListPanel() {
+            super();
+
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             setBackground(Color.WHITE);
         }
