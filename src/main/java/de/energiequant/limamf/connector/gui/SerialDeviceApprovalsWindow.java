@@ -133,6 +133,8 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
     @Override
     protected void processWindowEvent(WindowEvent e) {
+        super.processWindowEvent(e);
+
         int eventId = e.getID();
         if ((eventId == WindowEvent.WINDOW_OPENED) || (windowClosed && (eventId == WindowEvent.WINDOW_ACTIVATED))) {
             onWindowOpened();
@@ -149,8 +151,6 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
             close();
         }
-
-        super.processWindowEvent(e);
     }
 
     private boolean hasChanges() {
