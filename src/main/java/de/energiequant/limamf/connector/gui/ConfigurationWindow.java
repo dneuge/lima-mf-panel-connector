@@ -381,9 +381,12 @@ public class ConfigurationWindow extends JDialog {
             });
             comboPanelFactory.addItemListener(this::onPanelFactorySelected);
             add(
-                new HorizontalPanel(
-                    withBGColor(stylePlain(new JLabel("Implementation:")), Color.WHITE),
-                    comboPanelFactory
+                withBGColor(
+                    new HorizontalPanel(
+                        stylePlain(new JLabel("Implementation:")),
+                        comboPanelFactory
+                    ),
+                    Color.WHITE
                 ),
                 gbc
             );
@@ -395,9 +398,12 @@ public class ConfigurationWindow extends JDialog {
             fileChooser.addChoosableFileFilter(mccFileFilter);
             fileChooser.setFileFilter(mccFileFilter);
             add(
-                new HorizontalPanel(
-                    withBGColor(stylePlain(new JLabel("Connector config:")), Color.WHITE),
-                    fileField
+                withBGColor(
+                    new HorizontalPanel(
+                        stylePlain(new JLabel("Connector config:")),
+                        fileField
+                    ),
+                    Color.WHITE
                 ),
                 gbc
             );
@@ -425,9 +431,12 @@ public class ConfigurationWindow extends JDialog {
                 }
             });
             add(
-                new HorizontalPanel(
-                    withBGColor(stylePlain(new JLabel("Config serial:")), Color.WHITE),
-                    comboConfigSerials
+                withBGColor(
+                    new HorizontalPanel(
+                        stylePlain(new JLabel("Config serial:")),
+                        comboConfigSerials
+                    ),
+                    Color.WHITE
                 ),
                 gbc
             );
@@ -607,6 +616,7 @@ public class ConfigurationWindow extends JDialog {
 
     private static <T extends JComponent> T withBGColor(T component, Color color) {
         component.setBackground(color);
+        //component.setOpaque(true);
         return component;
     }
 
