@@ -9,7 +9,9 @@ import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.Timer;
 import javax.swing.WindowConstants;
 
 import org.slf4j.Logger;
@@ -29,8 +31,11 @@ public class MainWindow extends JFrame {
     private final Main main;
     private final ConfigurationWindow configWindow;
     private final AboutWindow aboutWindow;
+    private final JLabel lblStatus;
 
     private final ScrollableLogOutputPaneWrapper log;
+
+    private static final int STATUS_INDICATOR_UPDATE_INTERVAL_MILLIS = 1000;
 
     public MainWindow(Main main, Configuration config, ObservableCollectionProxy<USBDevice, ?> connectedUSBDevices, ObservableCollectionProxy<ConnectedModule, ?> connectedModules, Runnable onCloseCallback) {
         super(main.getApplicationInfo().getApplicationName());
@@ -58,7 +63,12 @@ public class MainWindow extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         log = new ScrollableLogOutputPaneWrapper(this::add, gbc);
 
-        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        lblStatus = new JLabel("Booting...");
+        add(lblStatus, gbc);
+
         gbc.gridy++;
         gbc.gridwidth = 1;
         gbc.weightx = 0.0;
@@ -99,6 +109,29 @@ public class MainWindow extends JFrame {
         });
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        new Timer(STATUS_INDICATOR_UPDATE_INTERVAL_MILLIS, this::onStatusIndicatorUpdateTimerTriggered).start();
+    }
+
+    private void onStatusIndicatorUpdateTimerTriggered(ActionEvent event) {
+        String newStatus = computeStatusText();
+        if (newStatus.equals(lblStatus.getText())) {
+            // no need to update
+            return;
+        }
+
+        lblStatus.setText(newStatus);
+        lblStatus.invalidate();
+        repaint();
+    }
+
+    private String computeStatusText() {
+        if (!main.isRunning()) {
+            return "Stopped";
+        }
+
+        int numActiveModules = main.getNumActiveModules();
+        return "Running... (" + numActiveModules + " module" + (numActiveModules == 1 ? "" : "s") + " active)";
     }
 
     public void showDisclaimer() {

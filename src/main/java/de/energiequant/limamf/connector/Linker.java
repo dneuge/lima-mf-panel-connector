@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ public class Linker {
     private final ObservableCollectionProxy<ModuleDiscovery.ConnectedModule, ?> connectedModules;
     private final ObservableCollectionProxy.Listener<ModuleDiscovery.ConnectedModule> connectedModulesListener;
     private final Map<ModuleId, Panel> activePanels = new HashMap<>();
+    private final AtomicInteger numActivePanels = new AtomicInteger(); // duplicate information to avoid blocking UI thread while we synchronize
 
     private SimulatorClient simulatorClient;
 
@@ -146,6 +148,7 @@ public class Linker {
                 System.exit(1);
                 return;
             }
+            numActivePanels.incrementAndGet();
 
             panel.getSimulatorEventListener().ifPresent(simulatorEventProxy::attachListener);
 
@@ -180,6 +183,7 @@ public class Linker {
                 System.exit(1);
                 return;
             }
+            numActivePanels.decrementAndGet();
 
             LOGGER.info("stopped disconnected module {}", moduleId);
         }
@@ -267,6 +271,10 @@ public class Linker {
 
     public boolean isRunning() {
         return running.get();
+    }
+
+    public int getNumActivePanels() {
+        return numActivePanels.get();
     }
 
     private static class SimulatorEventProxy extends EventProxy<SimulatorEventListener> implements SimulatorEventListener {

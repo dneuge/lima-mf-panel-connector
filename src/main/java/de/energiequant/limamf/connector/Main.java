@@ -125,6 +125,10 @@ public class Main {
         return linker.isRunning();
     }
 
+    public int getNumActiveModules() {
+        return linker.getNumActivePanels();
+    }
+
     public boolean startModules() {
         if (!disclaimerState.isAccepted()) {
             LOGGER.warn("Disclaimer must be accepted to start connector.");
