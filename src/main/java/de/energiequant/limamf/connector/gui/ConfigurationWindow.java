@@ -269,6 +269,10 @@ public class ConfigurationWindow extends JDialog {
                   )
                   .forEach(this::registerModule);
 
+            if (modulePanels.isEmpty()) {
+                add(new JLabel("No modules found. Check connections and device approvals."));
+            }
+
             revalidate();
             repaint();
         }
@@ -295,7 +299,12 @@ public class ConfigurationWindow extends JDialog {
             ModulePanel modulePanel = new ModulePanel(id);
 
             boolean isFirst = modulePanels.isEmpty();
-            if (!isFirst) {
+            if (isFirst) {
+                // "No modules found" is still visible - remove label component
+                removeAll();
+                invalidate();
+            } else {
+                // another ModulePanel is neighboring, add divider for clear visual separation
                 modulePanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.BLACK));
             }
 
