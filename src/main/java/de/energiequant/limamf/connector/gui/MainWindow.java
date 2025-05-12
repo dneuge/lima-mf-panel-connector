@@ -3,6 +3,7 @@ package de.energiequant.limamf.connector.gui;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -54,6 +55,7 @@ public class MainWindow extends JFrame {
 
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
+        Insets defaultInsets = gbc.insets;
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -64,12 +66,15 @@ public class MainWindow extends JFrame {
         log = new ScrollableLogOutputPaneWrapper(this::add, gbc);
 
         gbc.gridy++;
+        gbc.insets = new Insets(1, 2, 1, 2);
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         lblStatus = new JLabel("Booting...");
         add(lblStatus, gbc);
+        gbc.insets = defaultInsets;
 
         gbc.gridy++;
+        gbc.insets = new Insets(0, 1, 1, 0);
         gbc.gridwidth = 1;
         gbc.weightx = 0.0;
         gbc.weighty = 0.0;
@@ -79,6 +84,7 @@ public class MainWindow extends JFrame {
         add(runStopButton, gbc);
 
         gbc.gridx++;
+        gbc.insets = new Insets(0, 0, 1, 0);
         JButton configureButton = new JButton("Configure");
         configureButton.addActionListener(this::onConfigureClicked);
         add(configureButton, gbc);
@@ -90,6 +96,7 @@ public class MainWindow extends JFrame {
         add(aboutButton, gbc);
 
         gbc.gridx++;
+        gbc.insets = new Insets(0, 0, 1, 1);
         JButton quitButton = new JButton("Quit");
         quitButton.addActionListener(this::onQuitClicked);
         add(quitButton, gbc);

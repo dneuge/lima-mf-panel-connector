@@ -8,6 +8,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -70,10 +71,12 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         setMinimumSize(new Dimension(600, 400));
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
+        Insets defaultInsets = gbc.insets;
 
         gbc.gridwidth = 3;
         gbc.gridx = 0;
         gbc.gridy = 0;
+        gbc.insets = new Insets(1, 2, 5, 2);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         add(
@@ -90,6 +93,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         );
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = defaultInsets;
 
         gbc.gridx = 0;
         gbc.gridy++;
@@ -112,11 +116,13 @@ public class SerialDeviceApprovalsWindow extends JDialog {
         gbc.fill = GridBagConstraints.NONE;
 
         gbc.gridx++;
+        gbc.insets = new Insets(1, 1, 1, 0);
         JButton btnApply = new JButton("Apply & Close");
         btnApply.addActionListener(this::onApplyCloseClicked);
         add(btnApply, gbc);
 
         gbc.gridx++;
+        gbc.insets = new Insets(1, 0, 1, 1);
         JButton btnCancel = new JButton("Cancel");
         btnCancel.addActionListener(this::onCancelClicked);
         add(btnCancel, gbc);

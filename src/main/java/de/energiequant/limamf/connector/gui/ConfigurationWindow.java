@@ -9,6 +9,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
@@ -86,15 +87,18 @@ public class ConfigurationWindow extends JDialog {
         setMinimumSize(new Dimension(600, 400));
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
+        Insets defaultInsets = gbc.insets;
 
         gbc.gridwidth = 3;
         gbc.gridx = 0;
         gbc.gridy = 0;
+        gbc.insets = new Insets(1, 2, 5, 2);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         add(new ApprovalPanel(), gbc);
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = defaultInsets;
 
         gbc.gridx = 0;
         gbc.gridy++;
@@ -118,11 +122,13 @@ public class ConfigurationWindow extends JDialog {
         gbc.fill = GridBagConstraints.NONE;
 
         gbc.gridx++;
+        gbc.insets = new Insets(0, 1, 1, 0);
         JButton btnApply = new JButton("Apply & Close");
         btnApply.addActionListener(this::onApplyCloseClicked);
         add(btnApply, gbc);
 
         gbc.gridx++;
+        gbc.insets = new Insets(0, 0, 1, 1);
         JButton btnCancel = new JButton("Cancel");
         btnCancel.addActionListener(this::onCancelClicked);
         add(btnCancel, gbc);
@@ -244,6 +250,7 @@ public class ConfigurationWindow extends JDialog {
 
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             setBackground(Color.WHITE);
+            setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
 
             clear();
         }
