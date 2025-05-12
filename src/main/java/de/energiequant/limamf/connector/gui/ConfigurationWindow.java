@@ -274,7 +274,7 @@ public class ConfigurationWindow extends JDialog {
             }
 
             revalidate();
-            repaint();
+            ConfigurationWindow.this.repaint(); // whole window must be repainted or removed components remain partially on screen
         }
 
         public Set<Configuration.Module> toConfigModules() {
