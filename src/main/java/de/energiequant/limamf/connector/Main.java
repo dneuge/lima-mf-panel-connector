@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +28,7 @@ import de.energiequant.apputils.misc.attribution.Project;
 import de.energiequant.limamf.connector.gui.MainWindow;
 import de.energiequant.limamf.connector.panels.Panel;
 import de.energiequant.limamf.connector.simulator.SimulatorClient;
+import de.energiequant.limamf.connector.utils.OperatingSystem;
 
 public class Main {
     // TODO: CLI/headless mode?
@@ -195,6 +198,20 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        if (!(OperatingSystem.isLinux() || OperatingSystem.isMacOS())) {
+            String title = "Unsupported operating system";
+            String msg = APPLICATION_INFO.getApplicationName() + " only runs on Linux and macOS.\n\nFound: " + System.getProperty("os.name");
+
+            LOGGER.error("{}; {}", title, msg.replaceAll("\\R+", " "));
+
+            if (Launcher.shouldUseGui(args)) {
+                JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
+            }
+
+            System.exit(1);
+            return;
+        }
+
         // TODO: add more command line options
         String configPath = DEFAULT_CONFIG_PATH;
         if (args.length > 0) {

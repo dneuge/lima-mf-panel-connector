@@ -58,7 +58,7 @@ public class Launcher {
         return true;
     }
 
-    private static boolean shouldUseGui(String[] args) {
+    public static boolean shouldUseGui(String[] args) {
         String expectedDisableOption = LONG_OPTION_PREFIX + OPTION_NAME_NO_GUI;
         for (String arg : args) {
             if (expectedDisableOption.equals(arg)) {
