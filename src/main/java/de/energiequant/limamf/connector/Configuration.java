@@ -191,7 +191,20 @@ public class Configuration {
         }
 
         acceptedDisclaimer = getOptionalString(properties, PROPERTY_DISCLAIMER).orElse(null);
-        disclaimerState.setAccepted(disclaimerState.getDisclaimerHash().equals(acceptedDisclaimer));
+
+        String currentDisclaimerHash = disclaimerState.getDisclaimerHash();
+        boolean currentDisclaimerAccepted = currentDisclaimerHash.equals(acceptedDisclaimer);
+        if (currentDisclaimerAccepted) {
+            LOGGER.debug("Accepted disclaimer hash is still current: {}", acceptedDisclaimer);
+        } else {
+            LOGGER.debug("Disclaimer has changed; accepted hash is {}, current disclaimer has {}", acceptedDisclaimer, currentDisclaimerHash);
+            if (acceptedDisclaimer == null) {
+                LOGGER.warn("You need to accept the disclaimer before you can interact with any hardware modules.");
+            } else {
+                LOGGER.warn("Disclaimer changed; please re-read carefully and accept to continue.");
+            }
+        }
+        disclaimerState.setAccepted(currentDisclaimerAccepted);
 
         streamKeys(properties).filter(x -> x.startsWith(PROPERTY_USB_INTERFACES_PREFIX))
                               .map(x -> x.substring(0, x.indexOf(".", PROPERTY_USB_INTERFACES_PREFIX.length()) + 1))

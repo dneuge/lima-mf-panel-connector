@@ -232,8 +232,10 @@ public class Main {
             LOGGER.debug("Disclaimer state changed, persisting in config...");
 
             if (disclaimerState.isAccepted()) {
+                LOGGER.info("Disclaimer has been accepted. You can now configure modules and connect them to your flight simulator by clicking on \"Run/Stop\".");
                 config.setAcceptedDisclaimer(disclaimerState.getDisclaimerHash());
             } else {
+                LOGGER.warn("Disclaimer acceptance has been revoked. You need to accept the disclaimer to connect modules with this application.");
                 config.unsetAcceptedDisclaimer();
             }
 
