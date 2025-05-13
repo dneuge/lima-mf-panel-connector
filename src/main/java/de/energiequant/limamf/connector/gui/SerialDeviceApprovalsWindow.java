@@ -402,20 +402,20 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                         return;
                     }
 
-                    LOGGER.warn("Probing uncommon serial device for approval: {}", device);
+                    LOGGER.warn("Requested probe to uncommon serial device {}/{}", asHexUSBId(deviceId.getProduct()), asHexUSBId(deviceId.getVendor()));
                 }
 
                 // TODO: decouple probing from UI thread using SwingWorker and a modal wait dialog (see SwingWorker.get JavaDoc)
                 SerialDeviceApprovalsWindow.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 SerialDeviceApprovalsWindow.this.repaint(); // workaround for blocking UI thread; only works sometimes, needs decoupling
 
-                LOGGER.info("Probing for approval: {}", device);
+                LOGGER.info("Probing {} for approval ({}/{} {})", device.getDeviceNode().orElse(null), asHexUSBId(deviceId.getProduct()), asHexUSBId(deviceId.getVendor()), deviceId.getSerial().orElse("no serial"));
                 IdentificationInfoMessage identification = ModuleDiscovery.probe(deviceNode).orElse(null);
 
                 SerialDeviceApprovalsWindow.this.setCursor(Cursor.getDefaultCursor());
 
                 if (identification == null) {
-                    LOGGER.warn("Probe failed: {}", device);
+                    LOGGER.warn("Device on {} does not appear to run MobiFlight and cannot be used. The device may have fallen into an undefined state as a result of sending invalid commands; check physical state and reset if necessary: {}/{} {}", device.getDeviceNode().orElse(null), asHexUSBId(deviceId.getProduct()), asHexUSBId(deviceId.getVendor()), deviceId.getSerial().orElse("no serial"));
 
                     JOptionPane.showMessageDialog(this, "Failed to probe serial device " + deviceNode.getAbsolutePath() + ", MobiFlight was not detected.\n\nThe device may have fallen into an undefined state.", "Probe failed", JOptionPane.ERROR_MESSAGE);
                     updateUIList(); // update UI to reset checkbox state
@@ -423,7 +423,7 @@ public class SerialDeviceApprovalsWindow extends JDialog {
                 }
 
                 synchronized (this) {
-                    LOGGER.info("Probe succeeded: {} => {}", device, identification);
+                    LOGGER.info("Probe on {} found {} {} {} (version {})", device.getDeviceNode().orElse(null), identification.getMobiflightType(), identification.getName(), identification.getSerial(), identification.getVersion());
                     approvedDeviceIds.add(device.getId());
                 }
 
@@ -432,6 +432,10 @@ public class SerialDeviceApprovalsWindow extends JDialog {
 
             updateUIList();
         }
+    }
+
+    private static String asHexUSBId(int id) {
+        return String.format("%04X", id);
     }
 
     private static void syncEventDispatch(Runnable action) {

@@ -43,7 +43,7 @@ public class DeviceCommunicator {
     private final Thread receiveThread;
 
     private static final long CHECK_INTERVAL = 5000;
-    
+
     private static final Duration PROBE_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(10);
 
@@ -83,7 +83,7 @@ public class DeviceCommunicator {
         while (!shutdown.get()) {
             int res = io.readAtLeastOneInto(tmp);
             if (res == -1) {
-                LOGGER.info("{}[recv] stream has been closed", logPrefix);
+                LOGGER.debug("{}[recv] stream has been closed", logPrefix);
                 break;
             }
             if (res < 1) {
@@ -288,8 +288,10 @@ public class DeviceCommunicator {
         IdentificationInfoMessage result = null;
         try {
             result = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (CancellationException | ExecutionException | TimeoutException ex) {
-            LOGGER.warn("Probing {} failed", deviceNode, ex);
+        } catch (TimeoutException ex) {
+            LOGGER.warn("Device on {} did not respond in time", deviceNode);
+        } catch (CancellationException | ExecutionException ex) {
+            LOGGER.warn("Probe on {} failed unexpectedly", deviceNode, ex);
         }
 
         if (!communicator.waitForShutdown(SHUTDOWN_TIMEOUT)) {

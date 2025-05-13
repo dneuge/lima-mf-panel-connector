@@ -244,7 +244,6 @@ public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModul
                 continue;
             }
 
-            LOGGER.info("Probing: {}", device);
             IdentificationInfoMessage identification = probe(deviceNode).orElse(null);
             if (identification == null) {
                 LOGGER.warn("Module cannot be added (probe failed): {}", device);
@@ -284,7 +283,7 @@ public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModul
                     continue;
                 }
 
-                LOGGER.info("Module is available: {}", module);
+                LOGGER.debug("Module is available: {}", module);
                 connectedModules.add(module);
             }
         }
@@ -340,7 +339,7 @@ public class ModuleDiscovery extends AsyncMonitor<ModuleDiscovery.ConnectedModul
 
             for (ConnectedModule module : connectedModules.getAllPresent()) {
                 if (deviceId.equals(module.getUSBDevice().getId())) {
-                    LOGGER.warn("Module has become unavailable: {}", module);
+                    LOGGER.warn("Module has become unavailable: {} {} {} ({})", module.getModuleId().getType(), module.getModuleId().getName(), module.getModuleId().getSerial(), module.getUSBDevice().getDeviceNode().orElse(null));
                     connectedModules.remove(module);
                 }
             }

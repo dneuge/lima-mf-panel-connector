@@ -511,7 +511,7 @@ public class DCPCCPPanel implements Panel {
         }
 
         ModuleId moduleId = module.getModuleId();
-        LOGGER.info("Connecting to {} ({}, serial {}, protocol {})", usbDevice, moduleId.getName(), moduleId.getSerial(), protocolVersion);
+        LOGGER.debug("Connecting to {} ({}, serial {}, protocol {})", usbDevice, moduleId.getName(), moduleId.getSerial(), protocolVersion);
 
         File deviceNode = usbDevice.getDeviceNode().orElseThrow(() -> new IllegalArgumentException("no device node"));
         communicator = new DeviceCommunicator(deviceNode, protocolVersion, this::onCommandMessage);

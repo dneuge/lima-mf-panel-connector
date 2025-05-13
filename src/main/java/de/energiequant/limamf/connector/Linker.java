@@ -75,7 +75,7 @@ public class Linker {
             return;
         }
 
-        LOGGER.info("Module connected, starting: {}", module);
+        LOGGER.info("Module connected: {} {} {} on {}", moduleId.getType(), moduleId.getName(), moduleId.getSerial(), module.getUSBDevice().getDeviceNode().orElse(null));
 
         // get Panel factory
         String panelFactoryId = moduleConfig.getPanelFactoryId();
@@ -152,7 +152,7 @@ public class Linker {
 
             panel.getSimulatorEventListener().ifPresent(simulatorEventProxy::attachListener);
 
-            LOGGER.info("started \"{}\" for {}", panelFactory.getName(), module);
+            LOGGER.info("started \"{}\" for {}", panelFactory.getName(), module.getModuleId().getSerial());
         }
     }
 
@@ -168,7 +168,7 @@ public class Linker {
                 return;
             }
 
-            LOGGER.info("stopping disconnected module {}", moduleId);
+            LOGGER.debug("stopping disconnected module {}", moduleId);
             try {
                 panel.getSimulatorEventListener().ifPresent(simulatorEventProxy::detachListener);
                 panel.disconnect();
@@ -185,7 +185,7 @@ public class Linker {
             }
             numActivePanels.decrementAndGet();
 
-            LOGGER.info("stopped disconnected module {}", moduleId);
+            LOGGER.info("Module implementation has been stopped: {} {} {}", moduleId.getType(), moduleId.getName(), moduleId.getSerial());
         }
     }
 

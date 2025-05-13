@@ -139,7 +139,7 @@ public class Main {
         }
 
         if (config.getModules().isEmpty()) {
-            LOGGER.warn("At least one module must be configured to start connector.");
+            LOGGER.warn("No modules have been configured yet, unable to start.");
             return false;
         }
 

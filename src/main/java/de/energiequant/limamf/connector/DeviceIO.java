@@ -167,7 +167,11 @@ public class DeviceIO implements Closeable, AutoCloseable {
                 try {
                     bw.flush();
                 } catch (IOException ex) {
-                    LOGGER.warn("{}failed flushing buffer to device, closing", logPrefix, ex);
+                    if (closing.get()) {
+                        LOGGER.debug("{}failed flushing buffer to device, closing (expected due to marked as closing already)", logPrefix, ex);
+                    } else {
+                        LOGGER.warn("{}unexpectedly failed flushing buffer to device, closing", logPrefix, ex);
+                    }
                     tryClose();
                     throw new UncheckedIOException(ex);
                 }
