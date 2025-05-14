@@ -399,7 +399,7 @@ public class DCPCCPPanel implements Panel {
     }
 
     private enum OutputUsage {
-        BACKLIGHT(true, "BACKLIGHT_0_MANUAL", "BACKLIGHT_1_IN-SIM"),
+        BACKLIGHT(true, "BACKLIGHT_0_MANUAL", "BACKLIGHT_1_MANUAL", "BACKLIGHT_0_IN-SIM", "BACKLIGHT_1_IN-SIM"),
         LEFT_INDICATOR(false, "LED_LEFT_YELLOW", "LED_LEFT_BLINK"),
         RIGHT_INDICATOR(false, "LED_RIGHT_GREEN", "LED_RIGHT_BLINK");
 
