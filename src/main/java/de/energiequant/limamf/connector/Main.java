@@ -280,17 +280,20 @@ public class Main {
         if (parameters == null || parameters.hasOption(OPTION_NAME_HELP)) {
             new HelpFormatter().printHelp(APPLICATION_JAR_NAME, options);
             System.exit((parameters == null) ? 1 : 0);
+            return;
         }
 
         CommandLineAbout about = new CommandLineAbout(System.out, APPLICATION_INFO, "--" + OPTION_NAME_SHOW_LICENSE);
         if (parameters.hasOption(OPTION_NAME_VERSION)) {
             about.printVersion();
             System.exit(0);
+            return;
         }
 
         if (parameters.hasOption(OPTION_NAME_SHOW_LICENSE)) {
             String licenseName = parameters.getOptionValue(OPTION_NAME_SHOW_LICENSE);
             about.printLicenseAndQuit(licenseName);
+            return;
         }
 
         boolean shouldRunHeadless = GraphicsEnvironment.isHeadless() || parameters.hasOption(OPTION_NAME_NO_GUI);
@@ -316,6 +319,7 @@ public class Main {
             }
 
             System.exit(disclaimerState.isAccepted() ? 0 : 1);
+            return;
         }
 
         if (!(OperatingSystem.isLinux() || OperatingSystem.isMacOS())) {
