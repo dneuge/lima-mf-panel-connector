@@ -35,7 +35,7 @@
         <jsonSimple.version>4.0.1</jsonSimple.version>
         <slf4j.version>[1.7.36,1.7.99]</slf4j.version>
         <log4j.version>2.24.1</log4j.version>
-        <xpudp.version>0.1.0-SNAPSHOT</xpudp.version>
+        <xpudp.version>0.1.0.250516</xpudp.version>
         <mfcompat.version>0.1</mfcompat.version>
         <commons.configuration.version>2.11.0</commons.configuration.version>
 

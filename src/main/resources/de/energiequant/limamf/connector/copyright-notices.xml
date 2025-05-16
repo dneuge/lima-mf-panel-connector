@@ -37,8 +37,11 @@
     <notice groupId="de.energiequant.limamf" artifactId="mf-compat" version="0.1">
         Copyright (c) 2025 Daniel Neugebauer
     </notice>
-    <notice groupId="de.energiequant" artifactId="github-spainer-xplane-fork" version="0.1.0-SNAPSHOT">
+    <notice groupId="de.energiequant" artifactId="github-spainer-xplane-fork" version="0.1.0.250516">
         Copyright (c) 2021 Sven Painer
+        original library: https://github.com/spainer/xplane-java
+
+        forked by Daniel Neugebauer to include inofficial patches and tag releases
     </notice>
     <notice groupId="org.apache.commons" artifactId="commons-configuration2" version="2.11.0">
         Apache Commons Configuration
