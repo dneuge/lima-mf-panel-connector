@@ -1,7 +1,9 @@
 package de.energiequant.limamf.connector;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,9 +13,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +36,7 @@ import de.energiequant.apputils.misc.attribution.CopyrightNoticeProvider;
 import de.energiequant.apputils.misc.attribution.CopyrightNotices;
 import de.energiequant.apputils.misc.attribution.License;
 import de.energiequant.apputils.misc.attribution.Project;
+import de.energiequant.apputils.misc.cli.CommandLineAbout;
 import de.energiequant.limamf.connector.gui.MainWindow;
 import de.energiequant.limamf.connector.panels.Panel;
 import de.energiequant.limamf.connector.simulator.SimulatorClient;
@@ -44,6 +56,16 @@ public class Main {
     private final SimulatorClient.Factory simulatorClientFactory;
     private final Map<String, Panel.Factory> panelFactories;
     private final Linker linker;
+
+    private static final String APPLICATION_JAR_NAME = "lima-mf.jar";
+
+    private static final String OPTION_NAME_HELP = "help";
+    private static final String OPTION_NAME_SHOW_DISCLAIMER = "disclaimer";
+    private static final String OPTION_NAME_NO_GUI = Launcher.OPTION_NAME_NO_GUI;
+    private static final String OPTION_NAME_NO_CLASSPATH_CHECK = Launcher.OPTION_NAME_NO_CLASSPATH_CHECK;
+    private static final String OPTION_NAME_CONFIG_PATH = "config";
+    private static final String OPTION_NAME_VERSION = "version";
+    private static final String OPTION_NAME_SHOW_LICENSE = "license";
 
     private static final String DEFAULT_CONFIG_PATH = "lima-mf.properties";
 
@@ -197,35 +219,117 @@ public class Main {
         return out;
     }
 
+    private static Stream<String> sortedLicenseKeys() {
+        return Arrays.stream(License.values())
+                     .map(License::name)
+                     .sorted();
+    }
+
+    private static void addOptions(Options options) {
+        options.addOption(Option.builder()
+                                .longOpt(OPTION_NAME_HELP)
+                                .desc("prints the help text")
+                                .build());
+
+        options.addOption(Option.builder()
+                                .longOpt(OPTION_NAME_VERSION)
+                                .desc("prints all version, dependency and license information")
+                                .build());
+
+        options.addOption(Option.builder()
+                                .longOpt(OPTION_NAME_SHOW_DISCLAIMER)
+                                .desc("prints the disclaimer")
+                                .build());
+
+        options.addOption(Option.builder()
+                                .longOpt(OPTION_NAME_SHOW_LICENSE)
+                                .hasArg()
+                                .desc("prints the specified license, available: "
+                                          + sortedLicenseKeys().collect(Collectors.joining(", ")))
+                                .build());
+
+        options.addOption(Option.builder()
+                                .longOpt(OPTION_NAME_NO_GUI)
+                                .desc("disables GUI to force running headless on CLI")
+                                .build());
+
+        options.addOption(Option.builder()
+                                .longOpt(OPTION_NAME_NO_CLASSPATH_CHECK)
+                                .desc("disables check for possibly broken Java class path at application startup")
+                                .build());
+
+        options.addOption(Option.builder()
+                                .longOpt(OPTION_NAME_CONFIG_PATH)
+                                .hasArg()
+                                .desc("path to configuration file to be used")
+                                .build());
+    }
+
     public static void main(String[] args) {
+        Options options = new Options();
+        addOptions(options);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine parameters = null;
+        try {
+            parameters = parser.parse(options, args);
+        } catch (ParseException ex) {
+            System.err.println("Failed to parse command line: " + ex.getMessage());
+            System.err.flush();
+        }
+        if (parameters == null || parameters.hasOption(OPTION_NAME_HELP)) {
+            new HelpFormatter().printHelp(APPLICATION_JAR_NAME, options);
+            System.exit((parameters == null) ? 1 : 0);
+        }
+
+        CommandLineAbout about = new CommandLineAbout(System.out, APPLICATION_INFO, "--" + OPTION_NAME_SHOW_LICENSE);
+        if (parameters.hasOption(OPTION_NAME_VERSION)) {
+            about.printVersion();
+            System.exit(0);
+        }
+
+        if (parameters.hasOption(OPTION_NAME_SHOW_LICENSE)) {
+            String licenseName = parameters.getOptionValue(OPTION_NAME_SHOW_LICENSE);
+            about.printLicenseAndQuit(licenseName);
+        }
+
+        boolean shouldRunHeadless = GraphicsEnvironment.isHeadless() || parameters.hasOption(OPTION_NAME_NO_GUI);
+
+        DisclaimerState disclaimerState = new DisclaimerState(APPLICATION_INFO);
+
+        Configuration config;
+        String configPath = parameters.getOptionValue(OPTION_NAME_CONFIG_PATH, DEFAULT_CONFIG_PATH);
+        File configFile = new File(configPath);
+        if (configFile.exists()) {
+            config = Configuration.loadProperties(configFile, disclaimerState);
+        } else {
+            config = Configuration.createFromDefaults(disclaimerState).setSaveLocation(configFile);
+        }
+
+        if (parameters.hasOption(OPTION_NAME_SHOW_DISCLAIMER)
+            || (!disclaimerState.isAccepted() && shouldRunHeadless)) {
+            about.printDisclaimer();
+
+            if (shouldRunHeadless) {
+                System.out.println();
+                System.out.println("=== Disclaimer can only be accepted on GUI ===");
+            }
+
+            System.exit(disclaimerState.isAccepted() ? 0 : 1);
+        }
+
         if (!(OperatingSystem.isLinux() || OperatingSystem.isMacOS())) {
             String title = "Unsupported operating system";
             String msg = APPLICATION_INFO.getApplicationName() + " only runs on Linux and macOS.\n\nFound: " + System.getProperty("os.name");
 
             LOGGER.error("{}; {}", title, msg.replaceAll("\\R+", " "));
 
-            if (Launcher.shouldUseGui(args)) {
+            if (!shouldRunHeadless) {
                 JOptionPane.showMessageDialog(null, msg, title, JOptionPane.ERROR_MESSAGE);
             }
 
             System.exit(1);
             return;
-        }
-
-        // TODO: add more command line options
-        String configPath = DEFAULT_CONFIG_PATH;
-        if (args.length > 0) {
-            configPath = args[0];
-        }
-
-        DisclaimerState disclaimerState = new DisclaimerState(APPLICATION_INFO);
-
-        Configuration config;
-        File configFile = new File(configPath);
-        if (configFile.exists()) {
-            config = Configuration.loadProperties(configFile, disclaimerState);
-        } else {
-            config = Configuration.createFromDefaults(disclaimerState).setSaveLocation(configFile);
         }
 
         disclaimerState.addListener(() -> {
@@ -252,14 +356,19 @@ public class Main {
         try {
             Main main = new Main(config, usbSerialDeviceMonitor, moduleDiscovery, disclaimerState);
 
-            // TODO: enable headless operation
-            MainWindow mainWindow = new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), moduleDiscovery.getCollectionProxy(), main::terminate);
-            if (!disclaimerState.isAccepted()) {
-                mainWindow.showDisclaimer();
+            if (!shouldRunHeadless) {
+                MainWindow mainWindow = new MainWindow(main, config, usbSerialDeviceMonitor.getCollectionProxy(), moduleDiscovery.getCollectionProxy(), main::terminate);
+                if (!disclaimerState.isAccepted()) {
+                    mainWindow.showDisclaimer();
+                }
             }
 
             // TODO: auto-start only if configured to do so
-            main.startModules();
+            boolean started = main.startModules();
+            if (!started && shouldRunHeadless) {
+                LOGGER.error("Error during startup, not recoverable without GUI.");
+                System.exit(1);
+            }
         } catch (Exception ex) {
             LOGGER.error("application startup failed", ex);
             moduleDiscovery.shutdown();
