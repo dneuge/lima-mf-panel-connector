@@ -31,7 +31,7 @@
         <mainClass>de.energiequant.limamf.connector.Launcher</mainClass>
 
         <!-- runtime dependencies -->
-        <appUtilsMisc.version>0.1-SNAPSHOT</appUtilsMisc.version>
+        <appUtilsMisc.version>0.1</appUtilsMisc.version>
         <jsonSimple.version>4.0.1</jsonSimple.version>
         <slf4j.version>[1.7.36,1.7.99]</slf4j.version>
         <log4j.version>2.24.1</log4j.version>
