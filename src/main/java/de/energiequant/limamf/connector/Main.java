@@ -67,7 +67,9 @@ public class Main {
     private static final String OPTION_NAME_VERSION = "version";
     private static final String OPTION_NAME_SHOW_LICENSE = "license";
 
-    private static final String DEFAULT_CONFIG_PATH = "lima-mf.properties";
+    private static final String DEFAULT_CONFIG_NAME = "lima-mf.properties";
+    private static final String DEFAULT_CONFIG_PATH = OperatingSystem.resolveInUserConfigDirectory(DEFAULT_CONFIG_NAME)
+                                                                     .getAbsolutePath();
 
     private static final ApplicationInfo APPLICATION_INFO = new ApplicationInfo() {
         @Override
@@ -261,7 +263,7 @@ public class Main {
         options.addOption(Option.builder()
                                 .longOpt(OPTION_NAME_CONFIG_PATH)
                                 .hasArg()
-                                .desc("path to configuration file to be used")
+                                .desc("path to configuration file to be used (default: " + DEFAULT_CONFIG_PATH + ")")
                                 .build());
     }
 

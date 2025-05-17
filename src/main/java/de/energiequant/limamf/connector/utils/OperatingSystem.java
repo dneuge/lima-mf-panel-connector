@@ -13,6 +13,7 @@ import de.energiequant.limamf.connector.MissingTool;
 public class OperatingSystem {
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
     private static final String PATH_SEPARATOR = System.getProperty("path.separator");
+    private static final String HOME_DIRECTORY = System.getProperty("user.home");
 
     private OperatingSystem() {
         // utility class; hide constructor
@@ -38,6 +39,18 @@ public class OperatingSystem {
         if (!isMacOS()) {
             throw new UnsupportedOperatingSystem("macOS is required; found: \"" + System.getProperty("os.name") + "\"");
         }
+    }
+
+    public static File getUserConfigDirectory() {
+        if (isMacOS()) {
+            return new File(HOME_DIRECTORY + FILE_SEPARATOR + "Library" + FILE_SEPARATOR + "Application Support");
+        } else {
+            return new File(HOME_DIRECTORY + FILE_SEPARATOR + ".config");
+        }
+    }
+
+    public static File resolveInUserConfigDirectory(String path) {
+        return new File(getUserConfigDirectory().getAbsolutePath() + FILE_SEPARATOR + path);
     }
 
     public static Optional<File> locateFromPaths(String filename, Predicate<File> predicate) {
