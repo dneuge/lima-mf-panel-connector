@@ -298,6 +298,9 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/9/module-info.class</exclude>
+
                                         <exclude>META-INF/MANIFEST.MF</exclude>
 
                                         <!-- License information for dependencies is provided at runtime
