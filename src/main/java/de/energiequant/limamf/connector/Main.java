@@ -95,7 +95,7 @@ public class Main {
 
         @Override
         public String getApplicationVersion() {
-            return "0.1";
+            return "0.1.1";
         }
 
         @Override
