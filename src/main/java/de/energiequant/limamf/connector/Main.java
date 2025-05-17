@@ -123,7 +123,7 @@ public class Main {
 
         @Override
         public Optional<String> getDisclaimerAcceptanceText() {
-            return Optional.empty();
+            return Optional.of("I understand and accept the disclaimer and licenses");
         }
     };
 

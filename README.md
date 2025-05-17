@@ -73,19 +73,26 @@ and permanently record compliance with these guidelines.
 
 ## Disclaimer
 
-This is an unofficial project, both in terms of MobiFlight and hardware manufacturers. Unless endorsed by a
-manufacturer, please direct questions/bug reports only to the author(s) of this application, not to panel manufacturers
-or MobiFlight. Correct operation of hardware panels should always be verified according to official instructions
-(i.e. using original MobiFlight software on a supported platform).
+This is an unofficial project, both in terms of MobiFlight and hardware
+manufacturers. Unless endorsed by a manufacturer, please direct
+questions/bug reports only to the author(s) of this application, not to
+panel manufacturers or MobiFlight. Correct operation of hardware panels
+should always be verified according to official instructions (i.e.
+using original MobiFlight software on a supported platform).
 
-As this application interfaces with actual hardware, there is a risk of damage being caused, for example but not limited
-to e.g. the unit, health or property. **That risk is amplified** by interfacing with a firmware not controlled by the
-author(s) of this application. By using this application, users accept that none of the author(s), nor any of the
-author(s) of MobiFlight, nor panel manufacturers shall be held liable for any damage or harm being potentially caused
-associated with the usage of this application. Carefully read the [license](LICENSE.md) for details, as well as the
-license/disclaimer texts associated with MobiFlight's firmware (see MobiFlight for details).
+As this application interfaces with actual hardware, there is a **risk of
+damage being caused**, for example but not limited to e.g. hardware,
+health or property. **That risk is amplified** by interfacing with a
+firmware not controlled by the author(s) of this application. By using
+this application, users accept that none of the authors of this
+application or its dependencies/libraries, nor any of the authors of
+MobiFlight, nor panel manufacturers shall be held liable for any damage
+or harm being potentially caused by or being associated with the use of
+this application. Carefully read all licenses and their disclaimers for
+details, as well as the license/disclaimer texts associated with
+MobiFlight's firmware (see MobiFlight for details).
 
-Use of this application may void your warranty.
+Using this application may void the warranty of your hardware modules.
 
 ## Acknowledgements
 
