@@ -14,7 +14,7 @@
         Barry Lagerweij for the convenience put methods introduced in the 3.1.1 version.
     </notice>
     <notice groupId="com.google.auto.service" artifactId="auto-service-annotations" version="1.1.1">
-        <!-- this is compile-time dependency but attribution.xml does not indicate the scope - exclude? -->
+        <!-- annotation is an actual runtime dependency (retained after compilation), only the preprocessor is a compile-time dependency -->
         Copyright 2013 Google LLC
     </notice>
     <notice groupId="commons-cli" artifactId="commons-cli" version="1.9.0">
