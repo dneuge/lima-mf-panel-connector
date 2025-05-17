@@ -8,7 +8,7 @@
 
     <name>LiMa-MF Panel Connector</name>
     <description>unofficial integration of MobiFlight-based flight simulation hardware panels on alternative platforms</description>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <packaging>jar</packaging>
 
     <url>https://github.com/dneuge/lima-mf-panel-connector</url>
